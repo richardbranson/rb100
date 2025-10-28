@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RB100 30-Minute Workout</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050b16;
+      --panel: rgba(12, 20, 37, 0.85);
+      --panel-strong: rgba(16, 28, 52, 0.92);
+      --outline: rgba(255, 255, 255, 0.08);
+      --text: #f4f6fb;
+      --muted: rgba(244, 246, 251, 0.64);
+      --accent: #4f7bff;
+      --accent-soft: rgba(79, 123, 255, 0.22);
+      --success: #4fd1c5;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 30% -10%, rgba(79, 123, 255, 0.2), transparent 55%),
+        radial-gradient(circle at 80% 120%, rgba(79, 123, 255, 0.18), transparent 50%),
+        var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .app-shell {
+      position: relative;
+      height: min(100vh, 3840px);
+      aspect-ratio: 9 / 16;
+      width: min(100vw, calc(min(100vh, 3840px) * 9 / 16));
+      max-width: 1400px;
+      border-radius: 32px;
+      background: rgba(7, 12, 25, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 32px 68px rgba(0, 0, 0, 0.55);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      backdrop-filter: blur(24px);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: clamp(20px, 2.5vh, 42px) clamp(28px, 3vw, 56px);
+      background: linear-gradient(135deg, rgba(79, 123, 255, 0.25), rgba(79, 123, 255, 0));
+      border-bottom: 1px solid var(--outline);
+    }
+
+    .branding h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 2.2vw, 2.4rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .branding span {
+      display: block;
+      margin-top: 0.25rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-size: clamp(0.7rem, 1vw, 0.9rem);
+      color: var(--muted);
+    }
+
+    .config-toggle {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(8, 15, 32, 0.7);
+      color: inherit;
+      font-size: clamp(0.85rem, 1vw, 1rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.7em 1.4em;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .config-toggle:hover,
+    .config-toggle:focus-visible {
+      transform: translateY(-2px);
+      background: rgba(16, 26, 48, 0.95);
+      outline: none;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr auto;
+      padding: clamp(24px, 3vh, 48px) clamp(28px, 3vw, 56px);
+      gap: clamp(24px, 3vh, 44px);
+    }
+
+    .timer-section {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: clamp(18px, 2.5vh, 28px);
+    }
+
+    .main-timer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      gap: clamp(16px, 2.5vh, 24px);
+    }
+
+    .timer-ring {
+      position: relative;
+      width: clamp(320px, 45vw, 520px);
+      aspect-ratio: 1 / 1;
+    }
+
+    .timer-progress {
+      --angle: 0deg;
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(12, 18, 34, 0.92) 0 58%, transparent 58%),
+        conic-gradient(var(--accent) var(--angle), rgba(255, 255, 255, 0.08) var(--angle));
+      display: grid;
+      place-items: center;
+      padding: clamp(18px, 2vw, 30px);
+      transition: background 180ms ease;
+    }
+
+    .timer-progress::after {
+      content: "";
+      position: absolute;
+      inset: clamp(32px, 4vw, 48px);
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(5, 10, 20, 0.85);
+    }
+
+    .timer-inner {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .timer-label {
+      font-size: clamp(0.85rem, 1.1vw, 1.1rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .timer-value {
+      font-size: clamp(3rem, 6vw, 4.4rem);
+      font-weight: 700;
+      letter-spacing: 0.18em;
+    }
+
+    .phase-indicator {
+      font-size: clamp(1.05rem, 1.6vw, 1.5rem);
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .mini-progress-grid {
+      display: grid;
+      grid-template-columns: repeat(2, clamp(130px, 18vw, 180px));
+      gap: clamp(12px, 2vw, 32px);
+      justify-content: center;
+    }
+
+    .mini-progress {
+      position: relative;
+      border-radius: 50%;
+      aspect-ratio: 1 / 1;
+      --angle: 0deg;
+      background:
+        radial-gradient(circle at center, rgba(12, 18, 34, 0.9) 0 60%, transparent 60%),
+        conic-gradient(var(--success) var(--angle), rgba(255, 255, 255, 0.08) var(--angle));
+      display: grid;
+      place-items: center;
+      padding: clamp(12px, 1.4vw, 18px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .mini-progress strong {
+      font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+      letter-spacing: 0.12em;
+    }
+
+    .mini-progress span {
+      font-size: clamp(0.7rem, 1vw, 0.9rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .segment-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(16px, 2vw, 32px);
+      padding: clamp(18px, 2vh, 28px);
+      background: var(--panel-strong);
+      border-radius: 22px;
+      border: 1px solid var(--outline);
+    }
+
+    .segment-card {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .segment-card span {
+      letter-spacing: 0.3em;
+      font-size: clamp(0.75rem, 1vw, 0.95rem);
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .segment-card strong {
+      font-size: clamp(1.3rem, 2.4vw, 2rem);
+      letter-spacing: 0.16em;
+    }
+
+    .segment-card p {
+      margin: 0;
+      font-size: clamp(0.85rem, 1.1vw, 1.1rem);
+      color: rgba(244, 246, 251, 0.75);
+    }
+
+    .segment-card .countdown {
+      font-size: clamp(1rem, 2vw, 1.6rem);
+      color: var(--accent);
+      letter-spacing: 0.18em;
+    }
+
+    .exercise-section {
+      display: grid;
+      gap: clamp(14px, 2vh, 24px);
+    }
+
+    .exercise-section h2 {
+      margin: 0;
+      font-size: clamp(1.2rem, 1.8vw, 1.9rem);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .exercise-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(14px, 1.6vw, 24px);
+    }
+
+    .exercise-card {
+      background: var(--panel);
+      border-radius: 20px;
+      border: 1px solid var(--outline);
+      padding: clamp(12px, 1.4vw, 18px);
+      display: grid;
+      gap: clamp(10px, 1vw, 14px);
+      transition: transform 180ms ease, border 180ms ease, box-shadow 180ms ease;
+    }
+
+    .exercise-card.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79, 123, 255, 0.25);
+      transform: translateY(-4px);
+    }
+
+    .video-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(79, 123, 255, 0.45), rgba(79, 123, 255, 0.12)),
+        rgba(12, 22, 44, 0.85);
+      display: grid;
+      place-items: center;
+      font-size: clamp(0.75rem, 0.9vw, 0.95rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .exercise-card h3 {
+      margin: 0;
+      font-size: clamp(0.95rem, 1.2vw, 1.25rem);
+      letter-spacing: 0.08em;
+    }
+
+    .exercise-card p {
+      margin: 0;
+      font-size: clamp(0.75rem, 1vw, 0.95rem);
+      color: rgba(244, 246, 251, 0.68);
+      line-height: 1.4;
+    }
+
+    footer {
+      border-top: 1px solid var(--outline);
+      padding: clamp(20px, 2.3vh, 32px) clamp(28px, 3vw, 56px);
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      align-items: center;
+      gap: clamp(18px, 2vw, 28px);
+      background: linear-gradient(0deg, rgba(10, 18, 36, 0.9), rgba(10, 18, 36, 0.6));
+    }
+
+    .control-group {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: clamp(10px, 1vw, 16px);
+    }
+
+    .control-group button {
+      padding: clamp(12px, 1.4vw, 16px);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(12, 20, 38, 0.85);
+      color: inherit;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: clamp(0.7rem, 0.95vw, 0.95rem);
+      cursor: pointer;
+      transition: transform 150ms ease, background 150ms ease, border 150ms ease;
+    }
+
+    .control-group button:hover,
+    .control-group button:focus-visible {
+      transform: translateY(-2px);
+      background: rgba(20, 32, 60, 0.95);
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .control-group button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .session-summary {
+      justify-self: end;
+      display: grid;
+      gap: 0.35rem;
+      text-align: right;
+    }
+
+    .session-summary span {
+      font-size: clamp(0.7rem, 0.95vw, 0.9rem);
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .session-summary strong {
+      font-size: clamp(1.1rem, 1.6vw, 1.45rem);
+      letter-spacing: 0.14em;
+    }
+
+    .config-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(420px, 55%);
+      background: rgba(7, 12, 24, 0.92);
+      border-left: 1px solid var(--outline);
+      box-shadow: -24px 0 48px rgba(0, 0, 0, 0.45);
+      padding: clamp(24px, 3vh, 44px);
+      display: grid;
+      gap: clamp(18px, 2vh, 26px);
+      transform: translateX(100%);
+      transition: transform 220ms ease;
+    }
+
+    .config-panel[data-open="true"] {
+      transform: translateX(0);
+    }
+
+    .config-panel header {
+      padding: 0;
+      border: none;
+      background: none;
+    }
+
+    .config-panel h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+    }
+
+    .config-panel form {
+      display: grid;
+      gap: clamp(16px, 1.8vh, 24px);
+    }
+
+    .field {
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .field label {
+      font-size: 0.82rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .field input {
+      width: 100%;
+      padding: 0.75em 1em;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(10, 16, 30, 0.92);
+      color: inherit;
+      font-size: 1rem;
+    }
+
+    .config-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .config-actions button {
+      padding: 0.7em 1.4em;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(14, 22, 40, 0.88);
+      color: inherit;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    .config-actions button:hover,
+    .config-actions button:focus-visible {
+      transform: translateY(-2px);
+      background: rgba(24, 36, 64, 0.95);
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .config-actions .accent {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #050b16;
+      font-weight: 600;
+    }
+
+    .config-actions .accent:hover,
+    .config-actions .accent:focus-visible {
+      background: #6c93ff;
+    }
+
+    @media (max-width: 900px) {
+      .exercise-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      footer {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .session-summary {
+        justify-self: center;
+        text-align: center;
+      }
+
+      .control-group {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 600px) {
+      .exercise-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-progress-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .config-panel {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <div class="branding">
+        <h1>RB100 Workout</h1>
+        <span>30 Minute Circuit</span>
+      </div>
+      <button class="config-toggle" id="openConfig" type="button">⚙️ Configure</button>
+    </header>
+
+    <main>
+      <section class="timer-section">
+        <div class="main-timer">
+          <div class="timer-ring">
+            <div class="timer-progress" id="totalProgress">
+              <div class="timer-inner">
+                <div class="timer-label">Total Remaining</div>
+                <div class="timer-value" id="totalTimeDisplay">30:00</div>
+                <div class="phase-indicator" id="phaseIndicator">Ready</div>
+              </div>
+            </div>
+          </div>
+          <div class="mini-progress-grid">
+            <div class="mini-progress" id="roundProgress">
+              <div class="timer-inner">
+                <span>Round</span>
+                <strong id="roundTracker">1 / 3</strong>
+              </div>
+            </div>
+            <div class="mini-progress" id="cycleProgress">
+              <div class="timer-inner">
+                <span>Cycle</span>
+                <strong id="cycleTracker">1 / 6</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="segment-summary">
+          <div class="segment-card">
+            <span>Now</span>
+            <strong id="currentAction">Work</strong>
+            <p id="currentExercise">Hold steady and get ready.</p>
+            <div class="countdown" id="segmentCountdown">01:00</div>
+          </div>
+          <div class="segment-card">
+            <span>Next</span>
+            <strong id="nextAction">Rest</strong>
+            <p id="nextExercise">Your recovery window.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="exercise-section">
+        <h2>6 Exercise Circuit</h2>
+        <div class="exercise-grid" id="exerciseGrid"></div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="control-group">
+        <button id="prevExercise" type="button">⏮ Prev</button>
+        <button id="startWorkout" type="button">Start</button>
+        <button id="pauseWorkout" type="button">Pause</button>
+        <button id="stopWorkout" type="button">Stop</button>
+        <button id="resetWorkout" type="button">Reset</button>
+        <button id="nextExercise" type="button">Next ⏭</button>
+      </div>
+      <div class="session-summary">
+        <span>Session Progress</span>
+        <strong id="summaryLabel">Round 1 · Cycle 1</strong>
+      </div>
+    </footer>
+
+    <aside class="config-panel" id="configPanel" data-open="false">
+      <header>
+        <h2>Configuration</h2>
+      </header>
+      <form id="configForm">
+        <div class="field">
+          <label for="rounds">Rounds</label>
+          <input type="number" id="rounds" name="rounds" min="1" value="3" />
+        </div>
+        <div class="field">
+          <label for="cycles">Cycles</label>
+          <input type="number" id="cycles" name="cycles" min="1" value="6" />
+        </div>
+        <div class="field">
+          <label for="workDuration">Work (seconds)</label>
+          <input type="number" id="workDuration" name="workDuration" min="10" value="60" />
+        </div>
+        <div class="field">
+          <label for="restRounds">Rest Between Rounds (seconds)</label>
+          <input type="number" id="restRounds" name="restRounds" min="0" value="10" />
+        </div>
+        <div class="field">
+          <label for="restCycles">Rest Between Cycles (seconds)</label>
+          <input type="number" id="restCycles" name="restCycles" min="0" value="110" />
+        </div>
+      </form>
+      <div class="config-actions">
+        <button type="button" id="closeConfig">Close</button>
+        <button type="button" class="accent" id="applyDefaults">Default Times</button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const exercises = [
+      {
+        name: 'Kettlebell Swing',
+        description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.'
+      },
+      {
+        name: 'Push-Up to T Rotation',
+        description: 'Alternate a side plank reach between each rep to build rotational stability.'
+      },
+      {
+        name: 'Reverse Lunge & Press',
+        description: 'Step back, drop the knee, and drive overhead with the opposite arm on return.'
+      },
+      {
+        name: 'Renegade Row',
+        description: 'Brace through the core, row the bell, and resist trunk rotation under load.'
+      },
+      {
+        name: 'V-Up Reach',
+        description: 'Snap to a V-sit while touching toes and controlling the eccentric descent.'
+      },
+      {
+        name: 'Squat Thruster',
+        description: 'Sink deep into a squat and explode into a powerful overhead drive.'
+      }
+    ];
+
+    const exerciseGrid = document.getElementById('exerciseGrid');
+
+    function renderExerciseCards() {
+      exerciseGrid.innerHTML = '';
+      exercises.forEach((exercise, index) => {
+        const card = document.createElement('article');
+        card.className = 'exercise-card';
+        card.dataset.index = index;
+        card.innerHTML = `
+          <div class="video-placeholder">Video ${index + 1}</div>
+          <div>
+            <h3>${exercise.name}</h3>
+            <p>${exercise.description}</p>
+          </div>
+        `;
+        exerciseGrid.appendChild(card);
+      });
+    }
+
+    renderExerciseCards();
+
+    const config = {
+      totalRounds: 3,
+      totalCycles: 6,
+      workDuration: 60,
+      restBetweenRounds: 10,
+      restBetweenCycles: 110
+    };
+
+    const state = {
+      schedule: [],
+      totalDuration: 0,
+      currentSegmentIndex: 0,
+      segmentRemaining: 0,
+      totalRemaining: 0,
+      isRunning: false,
+      isPaused: false,
+      animationFrame: null,
+      lastTimestamp: null
+    };
+
+    const elements = {
+      totalTimeDisplay: document.getElementById('totalTimeDisplay'),
+      phaseIndicator: document.getElementById('phaseIndicator'),
+      totalProgress: document.getElementById('totalProgress'),
+      roundProgress: document.getElementById('roundProgress'),
+      cycleProgress: document.getElementById('cycleProgress'),
+      roundTracker: document.getElementById('roundTracker'),
+      cycleTracker: document.getElementById('cycleTracker'),
+      currentAction: document.getElementById('currentAction'),
+      currentExercise: document.getElementById('currentExercise'),
+      nextAction: document.getElementById('nextAction'),
+      nextExercise: document.getElementById('nextExercise'),
+      segmentCountdown: document.getElementById('segmentCountdown'),
+      summaryLabel: document.getElementById('summaryLabel'),
+      cards: () => Array.from(document.querySelectorAll('.exercise-card'))
+    };
+
+    const controls = {
+      start: document.getElementById('startWorkout'),
+      pause: document.getElementById('pauseWorkout'),
+      stop: document.getElementById('stopWorkout'),
+      reset: document.getElementById('resetWorkout'),
+      prev: document.getElementById('prevExercise'),
+      next: document.getElementById('nextExercise')
+    };
+
+    const configPanel = document.getElementById('configPanel');
+    const openConfigBtn = document.getElementById('openConfig');
+    const closeConfigBtn = document.getElementById('closeConfig');
+    const applyDefaultsBtn = document.getElementById('applyDefaults');
+    const form = document.getElementById('configForm');
+
+    function formatTime(totalSeconds) {
+      const clamped = Math.max(0, Math.round(totalSeconds));
+      const hours = Math.floor(clamped / 3600);
+      const minutes = Math.floor((clamped % 3600) / 60);
+      const seconds = clamped % 60;
+      const segments = [];
+      if (hours > 0) {
+        segments.push(String(hours).padStart(2, '0'));
+      }
+      segments.push(String(minutes).padStart(2, '0'));
+      segments.push(String(seconds).padStart(2, '0'));
+      return segments.join(':');
+    }
+
+    function buildSchedule() {
+      const segments = [];
+      for (let round = 1; round <= config.totalRounds; round += 1) {
+        for (let cycle = 1; cycle <= config.totalCycles; cycle += 1) {
+          segments.push({
+            type: 'work',
+            duration: config.workDuration,
+            round,
+            cycle,
+            exerciseIndex: (cycle - 1) % exercises.length
+          });
+          if (cycle < config.totalCycles) {
+            segments.push({
+              type: 'restCycle',
+              duration: config.restBetweenCycles,
+              round,
+              cycle,
+              exerciseIndex: (cycle - 1) % exercises.length
+            });
+          }
+        }
+        if (round < config.totalRounds) {
+          segments.push({
+            type: 'restRound',
+            duration: config.restBetweenRounds,
+            round,
+            cycle: config.totalCycles,
+            exerciseIndex: (config.totalCycles - 1) % exercises.length
+          });
+        }
+      }
+      state.schedule = segments;
+      state.totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
+    }
+
+    function setSegment(index, remaining) {
+      if (state.schedule.length === 0) return;
+      state.currentSegmentIndex = Math.max(0, Math.min(index, state.schedule.length - 1));
+      const segment = state.schedule[state.currentSegmentIndex];
+      state.segmentRemaining = remaining ?? segment.duration;
+      state.totalRemaining = state.segmentRemaining;
+      for (let i = state.currentSegmentIndex + 1; i < state.schedule.length; i += 1) {
+        state.totalRemaining += state.schedule[i].duration;
+      }
+      updateUI();
+    }
+
+    function resetState() {
+      buildSchedule();
+      state.isRunning = false;
+      state.isPaused = false;
+      state.lastTimestamp = null;
+      if (state.animationFrame) {
+        cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
+      }
+      if (state.schedule.length === 0) {
+        state.totalDuration = 0;
+        state.totalRemaining = 0;
+        state.segmentRemaining = 0;
+        state.currentSegmentIndex = 0;
+        updateUI();
+        return;
+      }
+      setSegment(0, state.schedule[0].duration);
+    }
+
+    function updateProgressRing(element, progress) {
+      const clamped = Math.max(0, Math.min(progress, 1));
+      element.style.setProperty('--angle', `${clamped * 360}deg`);
+    }
+
+    function highlightExercise(index) {
+      elements.cards().forEach((card, cardIndex) => {
+        card.classList.toggle('active', cardIndex === index);
+      });
+    }
+
+    function updateUI() {
+      const segment = state.schedule[state.currentSegmentIndex];
+      const nextSegment = state.schedule[state.currentSegmentIndex + 1];
+      const totalProgress = state.totalDuration === 0 ? 0 : (state.totalDuration - state.totalRemaining) / state.totalDuration;
+      updateProgressRing(elements.totalProgress, totalProgress);
+      elements.totalTimeDisplay.textContent = formatTime(state.totalRemaining);
+      const displayRound = segment?.round ?? config.totalRounds;
+      const displayCycle = segment?.cycle ?? config.totalCycles;
+      elements.roundTracker.textContent = `${displayRound} / ${config.totalRounds}`;
+      elements.cycleTracker.textContent = `${Math.min(displayCycle, config.totalCycles)} / ${config.totalCycles}`;
+      updateProgressRing(elements.roundProgress, config.totalRounds ? displayRound / config.totalRounds : 0);
+      updateProgressRing(elements.cycleProgress, config.totalCycles ? Math.min(displayCycle, config.totalCycles) / config.totalCycles : 0);
+
+      if (!segment) {
+        elements.phaseIndicator.textContent = 'Complete';
+        elements.currentAction.textContent = 'Finished';
+        elements.currentExercise.textContent = 'Workout complete. Great effort!';
+        elements.segmentCountdown.textContent = '00:00';
+        elements.nextAction.textContent = '—';
+        elements.nextExercise.textContent = 'Session complete';
+        elements.summaryLabel.textContent = `Round ${config.totalRounds} · Cycle ${config.totalCycles}`;
+        highlightExercise(-1);
+        return;
+      }
+
+      const phaseMap = {
+        work: 'Work',
+        restCycle: 'Rest',
+        restRound: 'Round Rest'
+      };
+
+      const phaseLabel = segment.type;
+      const initialSegmentDuration = state.schedule[0]?.duration ?? 0;
+      const readyState = !state.isRunning && !state.isPaused && state.currentSegmentIndex === 0 && Math.abs(state.segmentRemaining - initialSegmentDuration) < 0.5;
+
+      if (readyState) {
+        elements.phaseIndicator.textContent = 'Ready';
+        elements.currentAction.textContent = 'Ready';
+        elements.segmentCountdown.textContent = formatTime(initialSegmentDuration);
+        const exercise = exercises[segment.exerciseIndex];
+        elements.currentExercise.textContent = exercise ? `Start with ${exercise.name}` : 'Start the circuit';
+        highlightExercise(segment.exerciseIndex);
+      } else {
+        elements.phaseIndicator.textContent = phaseMap[phaseLabel] ?? 'Ready';
+        elements.currentAction.textContent = phaseMap[phaseLabel] ?? 'Ready';
+        elements.segmentCountdown.textContent = formatTime(state.segmentRemaining);
+
+        if (segment.type === 'work') {
+          const exercise = exercises[segment.exerciseIndex];
+          elements.currentExercise.textContent = exercise?.name ?? 'Circuit';
+          highlightExercise(segment.exerciseIndex);
+        } else if (segment.type === 'restCycle') {
+          const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((seg) => seg.type === 'work');
+          const exercise = nextWork ? exercises[nextWork.exerciseIndex] : exercises[segment.exerciseIndex];
+          elements.currentExercise.textContent = `Recover before ${exercise?.name ?? 'next set'}`;
+          highlightExercise(segment.exerciseIndex);
+        } else if (segment.type === 'restRound') {
+          elements.currentExercise.textContent = `Transition to round ${Math.min(segment.round + 1, config.totalRounds)}`;
+          highlightExercise(-1);
+        }
+      }
+
+      if (nextSegment) {
+        const nextLabel = phaseMap[nextSegment.type] ?? 'Ready';
+        elements.nextAction.textContent = nextLabel;
+        if (nextSegment.type === 'work') {
+          const exercise = exercises[nextSegment.exerciseIndex];
+          elements.nextExercise.textContent = exercise?.name ?? 'Circuit';
+        } else if (nextSegment.type === 'restCycle') {
+          elements.nextExercise.textContent = 'Recovery window';
+        } else {
+          elements.nextExercise.textContent = `Reset for round ${Math.min(nextSegment.round + 1, config.totalRounds)}`;
+        }
+      } else {
+        elements.nextAction.textContent = 'Finish';
+        elements.nextExercise.textContent = 'Final push to complete.';
+      }
+
+      elements.summaryLabel.textContent = `Round ${displayRound} · Cycle ${Math.min(displayCycle, config.totalCycles)}`;
+
+      const initialDuration = state.schedule[0]?.duration ?? 0;
+      const atBeginning = state.currentSegmentIndex === 0 && Math.abs(state.segmentRemaining - initialDuration) < 0.5 && !state.isRunning;
+      const atEnd = state.currentSegmentIndex >= state.schedule.length - 1 && !state.isRunning && state.totalRemaining < 0.5;
+
+      controls.start.disabled = state.isRunning && !state.isPaused;
+      controls.pause.disabled = !state.isRunning;
+      controls.pause.textContent = state.isPaused ? 'Resume' : 'Pause';
+      controls.stop.disabled = atBeginning && !state.isRunning;
+      controls.reset.disabled = atBeginning && !state.isRunning;
+      controls.prev.disabled = state.schedule.length === 0 || findNextWork(state.currentSegmentIndex, -1) === state.currentSegmentIndex;
+      controls.next.disabled = state.schedule.length === 0 || findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex || atEnd;
+    }
+
+    function advance(delta) {
+      let remainingDelta = delta;
+      while (remainingDelta > 0 && state.schedule[state.currentSegmentIndex]) {
+        if (state.segmentRemaining > remainingDelta) {
+          state.segmentRemaining -= remainingDelta;
+          state.totalRemaining = Math.max(0, state.totalRemaining - remainingDelta);
+          remainingDelta = 0;
+        } else {
+          remainingDelta -= state.segmentRemaining;
+          state.totalRemaining = Math.max(0, state.totalRemaining - state.segmentRemaining);
+          const nextIndex = state.currentSegmentIndex + 1;
+          if (nextIndex >= state.schedule.length) {
+            state.segmentRemaining = 0;
+            state.currentSegmentIndex = nextIndex;
+            state.isRunning = false;
+            state.animationFrame && cancelAnimationFrame(state.animationFrame);
+            state.animationFrame = null;
+            break;
+          }
+          state.currentSegmentIndex = nextIndex;
+          state.segmentRemaining = state.schedule[state.currentSegmentIndex].duration;
+        }
+      }
+      updateUI();
+    }
+
+    function tick(timestamp) {
+      if (!state.isRunning || state.isPaused) return;
+      if (state.lastTimestamp == null) {
+        state.lastTimestamp = timestamp;
+      }
+      const delta = (timestamp - state.lastTimestamp) / 1000;
+      state.lastTimestamp = timestamp;
+      advance(delta);
+      if (state.isRunning && !state.isPaused) {
+        state.animationFrame = requestAnimationFrame(tick);
+      }
+    }
+
+    function startTimer() {
+      if (state.schedule.length === 0 || state.currentSegmentIndex >= state.schedule.length) {
+        resetState();
+      }
+      if (!state.isRunning) {
+        state.isRunning = true;
+        state.isPaused = false;
+        state.lastTimestamp = null;
+        state.animationFrame = requestAnimationFrame(tick);
+      } else if (state.isPaused) {
+        state.isPaused = false;
+        state.lastTimestamp = null;
+        state.animationFrame = requestAnimationFrame(tick);
+      }
+      updateUI();
+    }
+
+    function pauseTimer() {
+      if (!state.isRunning) return;
+      state.isPaused = !state.isPaused;
+      if (!state.isPaused) {
+        state.lastTimestamp = null;
+        state.animationFrame = requestAnimationFrame(tick);
+      }
+      updateUI();
+    }
+
+    function stopTimer() {
+      state.isRunning = false;
+      state.isPaused = false;
+      if (state.animationFrame) {
+        cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
+      }
+      resetState();
+    }
+
+    function resetTimer() {
+      if (state.animationFrame) {
+        cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
+      }
+      state.isRunning = false;
+      state.isPaused = false;
+      setSegment(0, state.schedule[0]?.duration ?? 0);
+      updateUI();
+    }
+
+    function findNextWork(fromIndex, direction) {
+      if (state.schedule.length === 0) return fromIndex;
+      if (direction > 0) {
+        for (let i = fromIndex + 1; i < state.schedule.length; i += 1) {
+          if (state.schedule[i].type === 'work') return i;
+        }
+        return state.schedule.length - 1;
+      }
+      for (let i = fromIndex - 1; i >= 0; i -= 1) {
+        if (state.schedule[i].type === 'work') return i;
+      }
+      return 0;
+    }
+
+    function skip(direction) {
+      if (state.schedule.length === 0) return;
+      const nextWorkIndex = findNextWork(state.currentSegmentIndex, direction);
+      if (nextWorkIndex === state.currentSegmentIndex) {
+        return;
+      }
+      state.currentSegmentIndex = nextWorkIndex;
+      state.segmentRemaining = state.schedule[nextWorkIndex].duration;
+      state.totalRemaining = state.segmentRemaining;
+      for (let i = nextWorkIndex + 1; i < state.schedule.length; i += 1) {
+        state.totalRemaining += state.schedule[i].duration;
+      }
+      state.lastTimestamp = null;
+      updateUI();
+    }
+
+    controls.start.addEventListener('click', startTimer);
+    controls.pause.addEventListener('click', pauseTimer);
+    controls.stop.addEventListener('click', stopTimer);
+    controls.reset.addEventListener('click', resetTimer);
+    controls.next.addEventListener('click', () => skip(1));
+    controls.prev.addEventListener('click', () => skip(-1));
+
+    openConfigBtn.addEventListener('click', () => {
+      configPanel.dataset.open = 'true';
+    });
+
+    closeConfigBtn.addEventListener('click', () => {
+      configPanel.dataset.open = 'false';
+    });
+
+    applyDefaultsBtn.addEventListener('click', () => {
+      form.rounds.value = 3;
+      form.cycles.value = 6;
+      form.workDuration.value = 60;
+      form.restRounds.value = 10;
+      form.restCycles.value = 110;
+      updateConfigFromForm();
+    });
+
+    function updateConfigFromForm() {
+      config.totalRounds = Math.max(1, Number(form.rounds.value) || 1);
+      config.totalCycles = Math.max(1, Number(form.cycles.value) || 1);
+      config.workDuration = Math.max(5, Number(form.workDuration.value) || 5);
+      config.restBetweenRounds = Math.max(0, Number(form.restRounds.value) || 0);
+      config.restBetweenCycles = Math.max(0, Number(form.restCycles.value) || 0);
+      resetState();
+    }
+
+    form.addEventListener('input', updateConfigFromForm);
+
+    resetState();
+    updateUI();
+  </script>
+</body>
+</html>
