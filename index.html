@@ -67,6 +67,7 @@
       padding: clamp(20px, 2.5vh, 42px) clamp(28px, 3vw, 56px);
       background: linear-gradient(135deg, rgba(79, 123, 255, 0.25), rgba(79, 123, 255, 0));
       border-bottom: 1px solid var(--outline);
+      gap: clamp(20px, 2vw, 36px);
     }
 
     .branding h1 {
@@ -83,6 +84,21 @@
       text-transform: uppercase;
       font-size: clamp(0.7rem, 1vw, 0.9rem);
       color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: clamp(16px, 2vw, 28px);
+    }
+
+    .current-time {
+      font-size: clamp(1rem, 1.2vw, 1.3rem);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      min-width: 4ch;
+      text-align: right;
     }
 
     .config-toggle {
@@ -190,34 +206,30 @@
       stroke: var(--phase-rest);
     }
 
-    .timer-arc--active {
-      stroke: var(--accent);
+    .timer-arc--elapsed {
+      stroke: rgba(255, 255, 255, 0.24);
       opacity: 1;
     }
 
-    .timer-ring[data-phase="prepare"] .timer-arc--active {
+    .timer-ring[data-phase="prepare"] .timer-arc--work {
       stroke: var(--phase-prepare);
     }
 
-    .timer-ring[data-phase="paused"] .timer-arc--active {
+    .timer-ring[data-phase="paused"] .timer-arc--work,
+    .timer-ring[data-phase="paused"] .timer-arc--rest {
       stroke: var(--phase-paused);
     }
 
-    .timer-ring[data-phase="cycleRest"] .timer-arc--active {
+    .timer-ring[data-phase="cycleRest"] .timer-arc--rest {
       stroke: var(--phase-cycle);
     }
 
-    .timer-ring[data-phase="rest"] .timer-arc--active {
+    .timer-ring[data-phase="rest"] .timer-arc--rest {
       stroke: var(--phase-rest);
     }
 
-    .timer-ring[data-phase="work"] .timer-arc--active {
+    .timer-ring[data-phase="work"] .timer-arc--work {
       stroke: var(--phase-work);
-    }
-
-    .timer-ring[data-round="true"] .timer-arc--work,
-    .timer-ring[data-round="true"] .timer-arc--rest {
-      opacity: 1;
     }
 
     .timer-inner {
@@ -399,6 +411,19 @@
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: rgba(255, 255, 255, 0.8);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
     }
 
     .exercise-card h3 {
@@ -618,7 +643,10 @@
         <h1 id="workoutTitle">RB100 Workout</h1>
         <span id="workoutTagline">30 Minute Circuit</span>
       </div>
-      <button class="config-toggle" id="openConfig" type="button">⚙️ Configure</button>
+      <div class="header-actions">
+        <div class="current-time" id="currentTimeDisplay" aria-live="polite">00:00</div>
+        <button class="config-toggle" id="openConfig" type="button">⚙️ Configure</button>
+      </div>
     </header>
 
     <main>
@@ -629,7 +657,7 @@
               <circle class="timer-track" cx="60" cy="60" r="54" />
               <circle class="timer-arc timer-arc--rest" cx="60" cy="60" r="54" id="restArc" />
               <circle class="timer-arc timer-arc--work" cx="60" cy="60" r="54" id="workArc" />
-              <circle class="timer-arc timer-arc--active" cx="60" cy="60" r="54" id="activeArc" />
+              <circle class="timer-arc timer-arc--elapsed" cx="60" cy="60" r="54" id="activeArc" />
             </svg>
             <div class="timer-progress" id="totalProgress">
               <div class="timer-inner">
@@ -702,6 +730,12 @@
           </select>
         </div>
         <div class="field">
+          <label for="musicSelect">Music</label>
+          <select id="musicSelect" name="music">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="prepareDuration">Prepare (seconds)</label>
           <input type="number" id="prepareDuration" name="prepareDuration" min="0" value="10" />
         </div>
@@ -731,6 +765,7 @@
         <button type="button" class="accent" id="applyDefaults">Default Times</button>
       </div>
     </aside>
+    <div id="musicPlayerHost" class="sr-only" aria-hidden="true"></div>
   </div>
 
   <script>
@@ -750,6 +785,9 @@
             workDuration: 60,
             restBetweenRounds: 10,
             restBetweenCycles: 60
+          },
+          audio: {
+            music: 'focus-30'
           },
           exercises: [
             {
@@ -814,6 +852,9 @@
             restBetweenRounds: 15,
             restBetweenCycles: 75
           },
+          audio: {
+            music: 'focus-30'
+          },
           exercises: [
             {
               name: 'Dumbbell Snatch',
@@ -862,6 +903,9 @@
             workDuration: 45,
             restBetweenRounds: 15,
             restBetweenCycles: 90
+          },
+          audio: {
+            music: 'endurance-70'
           },
           exercises: [
             {
@@ -916,6 +960,35 @@
         }
       ];
 
+      const fallbackAudioLibrary = {
+        defaultMusic: 'focus-30',
+        music: [
+          {
+            slug: 'focus-30',
+            label: 'Focus Flow - 30 Minutes',
+            type: 'youtube',
+            url: 'https://www.youtube.com/watch?v=yScbNQYrR_A',
+            duration: 1800
+          },
+          {
+            slug: 'endurance-70',
+            label: 'Endurance Builder - 70 Minutes',
+            type: 'youtube',
+            url: 'https://www.youtube.com/watch?v=neAGV0RMFV8',
+            duration: 4200
+          }
+        ],
+        prompts: {
+          countdown: 'audio/RB_countdown.mp3',
+          pause: 'audio/RB_pause.mp3',
+          start: 'audio/RB_start.mp3',
+          tenSecondsLeft: 'audio/RB_tenSecondsLeft.mp3',
+          beeps: 'audio/RB_beeps.mp3',
+          rest: 'audio/RB_rest.mp3',
+          finished: 'audio/RB_finished.mp3'
+        }
+      };
+
       const defaultSettings = {
         prepareDuration: 10,
         totalRounds: 6,
@@ -946,6 +1019,7 @@
       const openConfigBtn = document.getElementById('openConfig');
       const closeConfigBtn = document.getElementById('closeConfig');
       const workoutSelect = document.getElementById('workoutSelect');
+      const musicSelect = document.getElementById('musicSelect');
 
       const elements = {
         timerRing: document.getElementById('timerRing'),
@@ -961,12 +1035,13 @@
         nextAction: document.getElementById('nextAction'),
         nextExercise: document.getElementById('nextExercise'),
         segmentCountdown: document.getElementById('segmentCountdown'),
-        summaryLabel: document.getElementById('summaryLabel'),
-        cards: () => Array.from(document.querySelectorAll('.exercise-card')),
-        workoutTitle: document.getElementById('workoutTitle'),
-        workoutTagline: document.getElementById('workoutTagline'),
-        exercisesHeading: document.getElementById('exercisesHeading')
-      };
+      summaryLabel: document.getElementById('summaryLabel'),
+      cards: () => Array.from(document.querySelectorAll('.exercise-card')),
+      workoutTitle: document.getElementById('workoutTitle'),
+      workoutTagline: document.getElementById('workoutTagline'),
+      exercisesHeading: document.getElementById('exercisesHeading'),
+      currentTime: document.getElementById('currentTimeDisplay')
+    };
 
       const controls = {
         start: document.getElementById('startWorkout'),
@@ -991,10 +1066,48 @@
         arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
       }
 
+    let audioLibrary = {
+      defaultMusic: null,
+      music: [],
+      prompts: {}
+    };
+
+    const promptSources = new Map();
+
+    const audioState = {
+      selectedMusicSlug: null,
+      currentTrack: null,
+      shouldPlay: false,
+      isPlaying: false,
+      pendingPlay: false,
+      player: null,
+      playerReady: false,
+      duckTimeout: null,
+      baseVolume: 55,
+      duckVolume: 25,
+      pendingTrackId: null,
+      pendingAutoPlay: false
+    };
+
+    const youTubeState = {
+      apiRequested: false,
+      ready: false,
+      resolveQueue: []
+    };
+
+    const promptState = {
+      segmentKey: null,
+      countdownPlayed: false,
+      tenSecondPlayed: false,
+      threeSecondPlayed: false,
+      completed: false
+    };
+
       let workouts = [];
       let exercises = [];
       let activeWorkout = null;
       let activeDefaults = { ...defaultSettings };
+      let activeDefaultMusicSlug = null;
       let isAppReady = false;
 
       function sanitizeNumber(value, fallback, min) {
@@ -1016,14 +1129,55 @@
         };
       }
 
-      function cloneSettings(settings) {
-        return sanitizeSettings(settings);
-      }
+    function cloneSettings(settings) {
+      return sanitizeSettings(settings);
+    }
 
-      function formatTime(totalSeconds) {
-        const clamped = Math.max(0, Math.round(totalSeconds));
-        const hours = Math.floor(clamped / 3600);
-        const minutes = Math.floor((clamped % 3600) / 60);
+    function normalizeAudioLibrary(rawLibrary) {
+      const library = {
+        defaultMusic: null,
+        music: [],
+        prompts: {}
+      };
+      if (!rawLibrary || typeof rawLibrary !== 'object') {
+        return library;
+      }
+      if (rawLibrary.defaultMusic) {
+        library.defaultMusic = String(rawLibrary.defaultMusic).toLowerCase();
+      }
+      if (Array.isArray(rawLibrary.music)) {
+        rawLibrary.music.forEach((item, index) => {
+          if (!item) return;
+          const slug = String(item.slug || item.url || `track-${index + 1}`).toLowerCase();
+          const label =
+            item.label ||
+            slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+          library.music.push({
+            slug,
+            label,
+            type: item.type || 'youtube',
+            url: item.url || item.src || '',
+            duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : null
+          });
+        });
+      }
+      if (rawLibrary.prompts && typeof rawLibrary.prompts === 'object') {
+        Object.entries(rawLibrary.prompts).forEach(([key, value]) => {
+          if (typeof value === 'string') {
+            library.prompts[key] = value;
+          }
+        });
+      }
+      if (!library.defaultMusic && library.music.length > 0) {
+        library.defaultMusic = library.music[0].slug;
+      }
+      return library;
+    }
+
+    function formatTime(totalSeconds) {
+      const clamped = Math.max(0, Math.round(totalSeconds));
+      const hours = Math.floor(clamped / 3600);
+      const minutes = Math.floor((clamped % 3600) / 60);
         const seconds = clamped % 60;
         const segments = [];
         if (hours > 0) {
@@ -1209,46 +1363,460 @@
         element.style.setProperty('--angle', `${clamped * 360}deg`);
       }
 
-      function setActiveArcProgress(remaining, total) {
-        if (!arcs.active) return;
-        if (!total || total <= 0) {
-          arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
-          return;
+      function setRoundArcs({ restFraction, workFraction, elapsedFraction }) {
+        if (!arcs.rest || !arcs.work || !arcs.active) return;
+        const clamp = (value) => Math.max(0, Math.min(1, value || 0));
+        let rest = clamp(restFraction);
+        let work = clamp(workFraction);
+        let elapsed = clamp(elapsedFraction);
+        const total = rest + work + elapsed;
+        if (total > 1) {
+          const scale = 1 / total;
+          rest *= scale;
+          work *= scale;
+          elapsed *= scale;
         }
-        const remainingFraction = Math.max(0, Math.min(remaining / total, 1));
-        arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - remainingFraction);
-      }
+        const restLength = ARC_CIRCUMFERENCE * rest;
+        const workLength = ARC_CIRCUMFERENCE * work;
+        const elapsedLength = ARC_CIRCUMFERENCE * elapsed;
 
-      function updateRoundArcs(workDuration, restDuration) {
-        if (!arcs.work || !arcs.rest) return;
-        const safeWork = Math.max(0, workDuration);
-        const safeRest = Math.max(0, restDuration);
-        const roundTotal = safeWork + safeRest;
-        if (roundTotal <= 0) {
-          clearRoundArcs();
-          return;
-        }
-        const workRatio = Math.min(1, safeWork / roundTotal);
-        const restRatio = Math.min(1, safeRest / roundTotal);
-        const workLength = ARC_CIRCUMFERENCE * workRatio;
-        const restLength = ARC_CIRCUMFERENCE * restRatio;
-        arcs.work.style.strokeDasharray = `${workLength} ${ARC_CIRCUMFERENCE}`;
-        arcs.work.style.strokeDashoffset = 0;
-        arcs.work.style.opacity = workLength > 0 ? 1 : 0;
         arcs.rest.style.strokeDasharray = `${restLength} ${ARC_CIRCUMFERENCE}`;
-        arcs.rest.style.strokeDashoffset = -workLength;
+        arcs.rest.style.strokeDashoffset = 0;
         arcs.rest.style.opacity = restLength > 0 ? 1 : 0;
-        elements.timerRing.dataset.round = 'true';
+
+        arcs.work.style.strokeDasharray = `${workLength} ${ARC_CIRCUMFERENCE}`;
+        arcs.work.style.strokeDashoffset = -restLength;
+        arcs.work.style.opacity = workLength > 0 ? 1 : 0;
+
+        arcs.active.style.strokeDasharray = `${elapsedLength} ${ARC_CIRCUMFERENCE}`;
+        arcs.active.style.strokeDashoffset = -(restLength + workLength);
+        arcs.active.style.opacity = elapsedLength > 0 ? 1 : 0.25;
       }
 
       function clearRoundArcs() {
-        if (!arcs.work || !arcs.rest) return;
-        elements.timerRing.dataset.round = 'false';
+        if (!arcs.work || !arcs.rest || !arcs.active) return;
         arcs.work.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
         arcs.rest.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
-        arcs.rest.style.strokeDashoffset = 0;
+        arcs.active.style.strokeDasharray = `${ARC_CIRCUMFERENCE} ${ARC_CIRCUMFERENCE}`;
+        arcs.work.style.opacity = 0;
+        arcs.rest.style.opacity = 0;
+        arcs.active.style.opacity = 0.25;
         arcs.work.style.strokeDashoffset = 0;
+        arcs.rest.style.strokeDashoffset = 0;
+        arcs.active.style.strokeDashoffset = 0;
       }
+
+      function updateRoundDisplay(segment) {
+        if (!segment) {
+          clearRoundArcs();
+          return;
+        }
+        if (segment.type === 'restCycle') {
+          const total = segment.duration || 1;
+          const restRemaining = Math.max(0, Math.min(segment.duration, state.segmentRemaining));
+          const restFraction = total > 0 ? restRemaining / total : 0;
+          const elapsedFraction = 1 - restFraction;
+          setRoundArcs({
+            restFraction,
+            workFraction: 0,
+            elapsedFraction
+          });
+          return;
+        }
+
+        const workDuration = Math.max(0, config.workDuration);
+        let restPlanned = 0;
+        if (segment.type === 'work') {
+          restPlanned = segment.round < config.totalRounds ? Math.max(0, config.restBetweenRounds) : 0;
+        } else if (segment.type === 'restRound') {
+          restPlanned = Math.max(0, segment.duration);
+        } else {
+          restPlanned = Math.max(0, config.restBetweenRounds);
+        }
+
+        const totalRound = workDuration + restPlanned;
+        if (totalRound <= 0) {
+          clearRoundArcs();
+          return;
+        }
+
+        let workRemaining = 0;
+        if (segment.type === 'work') {
+          workRemaining = Math.max(0, Math.min(workDuration, state.segmentRemaining));
+        } else if (segment.type === 'prepare') {
+          workRemaining = workDuration;
+        }
+
+        let restRemaining = 0;
+        if (segment.type === 'restRound') {
+          restRemaining = Math.max(0, Math.min(restPlanned, state.segmentRemaining));
+        } else if (segment.type === 'work' || segment.type === 'prepare') {
+          restRemaining = restPlanned;
+        }
+
+        restRemaining = Math.max(0, Math.min(restPlanned, restRemaining));
+
+        const restFraction = restRemaining / totalRound;
+        const workFraction = workRemaining / totalRound;
+        const elapsedFraction = Math.max(0, 1 - restFraction - workFraction);
+
+        setRoundArcs({ restFraction, workFraction, elapsedFraction });
+      }
+
+    function resetPromptState() {
+      promptState.segmentKey = null;
+      promptState.countdownPlayed = false;
+      promptState.tenSecondPlayed = false;
+      promptState.threeSecondPlayed = false;
+      promptState.completed = false;
+    }
+
+    function getMusicTrack(slug) {
+      if (!audioLibrary.music.length) return null;
+      if (!slug) return audioLibrary.music[0];
+      return audioLibrary.music.find((track) => track.slug === slug) ?? audioLibrary.music[0];
+    }
+
+    function setPlayerVolume(volumePercent) {
+      if (!audioState.player || typeof audioState.player.setVolume !== 'function') return;
+      const clamped = Math.max(0, Math.min(100, Math.round(volumePercent)));
+      try {
+        audioState.player.setVolume(clamped);
+      } catch (error) {
+        console.warn('Unable to adjust music volume.', error);
+      }
+    }
+
+    function unduckMusic() {
+      if (audioState.duckTimeout) {
+        clearTimeout(audioState.duckTimeout);
+        audioState.duckTimeout = null;
+      }
+      if (audioState.playerReady) {
+        setPlayerVolume(audioState.baseVolume);
+      }
+    }
+
+    function duckMusic(duration = 1500) {
+      if (!audioState.isPlaying || !audioState.playerReady) return;
+      unduckMusic();
+      setPlayerVolume(audioState.duckVolume);
+      audioState.duckTimeout = setTimeout(() => {
+        unduckMusic();
+      }, duration);
+    }
+
+    function playPrompt(key, options = {}) {
+      const src = promptSources.get(key);
+      if (!src) return;
+      const { duck = true } = options;
+      try {
+        const audio = new Audio(src);
+        audio.preload = 'auto';
+        audio.volume = 1;
+        if (duck && audioState.isPlaying) {
+          const applyDuck = () => {
+            const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? (audio.duration * 1000) + 250 : 1800;
+            duckMusic(duration);
+          };
+          if (Number.isFinite(audio.duration) && audio.duration > 0) {
+            applyDuck();
+          } else {
+            audio.addEventListener('loadedmetadata', applyDuck, { once: true });
+            duckMusic();
+          }
+          audio.addEventListener('ended', unduckMusic, { once: true });
+        }
+        audio.play().catch((error) => {
+          console.warn(`Prompt ${key} failed to play.`, error);
+        });
+      } catch (error) {
+        console.warn(`Prompt ${key} failed to initialise.`, error);
+      }
+    }
+
+    function ensureYouTubeApi() {
+      if (youTubeState.ready) return Promise.resolve();
+      return new Promise((resolve) => {
+        if (youTubeState.ready) {
+          resolve();
+          return;
+        }
+        youTubeState.resolveQueue.push(resolve);
+        if (!youTubeState.apiRequested) {
+          youTubeState.apiRequested = true;
+          const previousHandler = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = function onYouTubeIframeAPIReady() {
+            youTubeState.ready = true;
+            youTubeState.resolveQueue.splice(0).forEach((queuedResolve) => queuedResolve());
+            if (typeof previousHandler === 'function') {
+              previousHandler();
+            }
+          };
+          const script = document.createElement('script');
+          script.id = 'youtube-iframe-api';
+          script.src = 'https://www.youtube.com/iframe_api';
+          document.head.appendChild(script);
+        }
+      });
+    }
+
+    function bindPlayerEvents(player) {
+      if (!player) return;
+      player.addEventListener('onStateChange', (event) => {
+        if (event.data === window.YT?.PlayerState?.PLAYING) {
+          audioState.isPlaying = true;
+          setPlayerVolume(audioState.baseVolume);
+        } else if (event.data === window.YT?.PlayerState?.PAUSED) {
+          audioState.isPlaying = false;
+        } else if (event.data === window.YT?.PlayerState?.ENDED) {
+          if (audioState.shouldPlay) {
+            event.target.seekTo(0, true);
+            event.target.playVideo();
+          } else {
+            audioState.isPlaying = false;
+          }
+        }
+      });
+    }
+
+    async function loadYouTubeTrack(track, { autoPlay = false } = {}) {
+      const videoId = extractYouTubeId(track?.url ?? track?.src);
+      if (!videoId) {
+        console.warn('No valid video id for track', track);
+        return;
+      }
+      audioState.currentTrack = track;
+      audioState.pendingTrackId = videoId;
+      audioState.pendingAutoPlay = !!autoPlay;
+
+      await ensureYouTubeApi();
+
+      if (!audioState.player) {
+        audioState.player = new window.YT.Player('musicPlayerHost', {
+          height: '0',
+          width: '0',
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            rel: 0,
+            playsinline: 1,
+            modestbranding: 1
+          },
+          events: {
+            onReady: () => {
+              audioState.playerReady = true;
+              setPlayerVolume(audioState.baseVolume);
+              const pendingId = audioState.pendingTrackId;
+              const shouldAuto = audioState.pendingAutoPlay || audioState.shouldPlay;
+              if (pendingId && typeof audioState.player.cueVideoById === 'function') {
+                if (shouldAuto && typeof audioState.player.loadVideoById === 'function') {
+                  audioState.player.loadVideoById(pendingId, 0);
+                } else {
+                  audioState.player.cueVideoById(pendingId, 0);
+                }
+              }
+              if (shouldAuto) {
+                playMusicInternal();
+              } else {
+                audioState.pendingPlay = false;
+              }
+              audioState.pendingAutoPlay = false;
+              audioState.pendingTrackId = null;
+            }
+          }
+        });
+        bindPlayerEvents(audioState.player);
+        return;
+      }
+
+      audioState.playerReady = true;
+      if (autoPlay || audioState.shouldPlay) {
+        if (typeof audioState.player.loadVideoById === 'function') {
+          audioState.player.loadVideoById(videoId, 0);
+        }
+        playMusicInternal();
+      } else if (typeof audioState.player.cueVideoById === 'function') {
+        audioState.player.cueVideoById(videoId, 0);
+      } else if (typeof audioState.player.loadVideoById === 'function') {
+        audioState.player.loadVideoById(videoId, 0);
+        if (typeof audioState.player.pauseVideo === 'function') {
+          audioState.player.pauseVideo();
+        }
+      }
+      audioState.pendingTrackId = null;
+      audioState.pendingAutoPlay = false;
+    }
+
+    function playMusicInternal() {
+      if (!audioState.player || !audioState.playerReady) {
+        audioState.pendingPlay = true;
+        return;
+      }
+      audioState.pendingPlay = false;
+      try {
+        if (typeof audioState.player.playVideo === 'function') {
+          audioState.player.playVideo();
+          setPlayerVolume(audioState.baseVolume);
+          audioState.isPlaying = true;
+        }
+      } catch (error) {
+        console.warn('Unable to play music track.', error);
+      }
+    }
+
+    function playMusic() {
+      audioState.shouldPlay = true;
+      if (!audioState.selectedMusicSlug && audioLibrary.music.length > 0) {
+        audioState.selectedMusicSlug = audioLibrary.music[0].slug;
+      }
+      if (!audioState.currentTrack || audioState.currentTrack.slug !== audioState.selectedMusicSlug) {
+        const result = setMusicTrackBySlug(audioState.selectedMusicSlug, { autoPlay: true });
+        if (result && typeof result.then === 'function') {
+          result.then(() => {
+            if (audioState.shouldPlay) {
+              playMusicInternal();
+            }
+          });
+        }
+        return;
+      }
+      playMusicInternal();
+    }
+
+    function pauseMusic(silent = false) {
+      audioState.shouldPlay = false;
+      audioState.pendingPlay = false;
+      if (audioState.player && audioState.playerReady) {
+        try {
+          if (typeof audioState.player.pauseVideo === 'function') {
+            audioState.player.pauseVideo();
+          }
+        } catch (error) {
+          console.warn('Unable to pause music.', error);
+        }
+      }
+      audioState.isPlaying = false;
+      unduckMusic();
+    }
+
+    function stopMusic() {
+      pauseMusic(true);
+      audioState.pendingAutoPlay = false;
+      audioState.pendingTrackId = null;
+      if (audioState.player && audioState.playerReady) {
+        try {
+          if (typeof audioState.player.stopVideo === 'function') {
+            audioState.player.stopVideo();
+          }
+          if (typeof audioState.player.seekTo === 'function') {
+            audioState.player.seekTo(0, true);
+          }
+        } catch (error) {
+          console.warn('Unable to stop music.', error);
+        }
+      }
+    }
+
+    function loadPromptSources(prompts) {
+      promptSources.clear();
+      if (!prompts) return;
+      Object.entries(prompts).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          promptSources.set(key, value);
+        }
+      });
+    }
+
+    function populateMusicSelect() {
+      if (!musicSelect) return;
+      musicSelect.innerHTML = '';
+      if (!audioLibrary.music.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No tracks available';
+        musicSelect.appendChild(option);
+        musicSelect.disabled = true;
+        return;
+      }
+      audioLibrary.music.forEach((track) => {
+        const option = document.createElement('option');
+        option.value = track.slug;
+        option.textContent = track.label || track.slug;
+        musicSelect.appendChild(option);
+      });
+      musicSelect.disabled = false;
+      const preferred =
+        audioState.selectedMusicSlug ??
+        audioLibrary.defaultMusic ??
+        (audioLibrary.music[0]?.slug ?? '');
+      setMusicSelectValue(preferred);
+    }
+
+    function setMusicSelectValue(slug) {
+      if (!musicSelect) return;
+      const value = slug ?? '';
+      if (musicSelect.value !== value) {
+        musicSelect.value = value;
+      }
+    }
+
+    function setMusicTrackBySlug(slug, options = {}) {
+      const track = getMusicTrack(slug);
+      audioState.selectedMusicSlug = track?.slug ?? null;
+      setMusicSelectValue(audioState.selectedMusicSlug);
+      if (!track) {
+        audioState.currentTrack = null;
+        stopMusic();
+        return Promise.resolve();
+      }
+      if (track.type === 'youtube') {
+        return loadYouTubeTrack(track, { autoPlay: !!options.autoPlay });
+      }
+      return Promise.resolve();
+    }
+
+    function handleSegmentPrompts(segment) {
+      if (!segment) {
+        if (!promptState.completed) {
+          playPrompt('finished', { duck: false });
+          stopMusic();
+          promptState.completed = true;
+        }
+        return;
+      }
+      promptState.completed = false;
+      const key = `${state.currentSegmentIndex}:${segment.type}`;
+      const isNewSegment = key !== promptState.segmentKey;
+      if (isNewSegment) {
+        promptState.segmentKey = key;
+        promptState.countdownPlayed = false;
+        promptState.tenSecondPlayed = false;
+        promptState.threeSecondPlayed = false;
+        if (state.isRunning && !state.isPaused) {
+          if (segment.type === 'work') {
+            playPrompt('start');
+          } else if (segment.type === 'restRound' || segment.type === 'restCycle') {
+            playPrompt('rest');
+          }
+        }
+      }
+      if (!state.isRunning || state.isPaused) {
+        return;
+      }
+      if (segment.type === 'prepare' && !promptState.countdownPlayed && state.segmentRemaining <= 3.05) {
+        playPrompt('countdown');
+        promptState.countdownPlayed = true;
+      }
+      if (segment.type === 'work' && !promptState.tenSecondPlayed && state.segmentRemaining <= 10.05) {
+        playPrompt('tenSecondsLeft');
+        promptState.tenSecondPlayed = true;
+      }
+      if ((segment.type === 'work' || segment.type.startsWith('rest')) && !promptState.threeSecondPlayed && state.segmentRemaining <= 3.05) {
+        playPrompt('beeps');
+        promptState.threeSecondPlayed = true;
+      }
+    }
 
       function buildSchedule() {
         const segments = [];
@@ -1323,172 +1891,162 @@
         updateUI();
       }
 
-      function resetState() {
-        buildSchedule();
-        state.isRunning = false;
-        state.isPaused = false;
-        state.lastTimestamp = null;
-        if (state.animationFrame) {
-          cancelAnimationFrame(state.animationFrame);
-          state.animationFrame = null;
-        }
-        if (state.schedule.length === 0) {
-          state.totalDuration = 0;
-          state.totalRemaining = 0;
-          state.segmentRemaining = 0;
-          state.currentSegmentIndex = 0;
-          updateUI();
-          return;
-        }
-        setSegment(0, state.schedule[0].duration);
+    function resetState() {
+      buildSchedule();
+      resetPromptState();
+      state.isRunning = false;
+      state.isPaused = false;
+      state.lastTimestamp = null;
+      if (state.animationFrame) {
+        cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
+      }
+      if (state.schedule.length === 0) {
+        state.totalDuration = 0;
+        state.totalRemaining = 0;
+        state.segmentRemaining = 0;
+        state.currentSegmentIndex = 0;
+        updateUI();
+        return;
+      }
+      setSegment(0, state.schedule[0].duration);
+    }
+
+    function getExerciseName(index) {
+      if (index == null || index < 0) return 'Circuit';
+      return exercises[index]?.name ?? 'Circuit';
+    }
+
+    function updateUI() {
+      const segment = state.schedule[state.currentSegmentIndex];
+      const nextSegment = state.schedule[state.currentSegmentIndex + 1];
+      const totalRounds = Math.max(1, config.totalRounds);
+      const totalCycles = Math.max(1, config.totalCycles);
+
+      const resolvedRound = segment && segment.round > 0 ? Math.min(segment.round, totalRounds) : 1;
+      const resolvedCycle = segment && segment.cycle > 0 ? Math.min(segment.cycle, totalCycles) : 1;
+
+      updateProgressRing(elements.roundProgress, totalRounds ? resolvedRound / totalRounds : 0);
+      updateProgressRing(elements.cycleProgress, totalCycles ? resolvedCycle / totalCycles : 0);
+
+      elements.roundTracker.textContent = `${resolvedRound} / ${totalRounds}`;
+      elements.cycleTracker.textContent = `${resolvedCycle} / ${totalCycles}`;
+
+      const totalRemaining = Math.max(0, state.totalRemaining);
+      elements.segmentCountdown.textContent = formatTime(totalRemaining);
+      elements.summaryLabel.textContent = `Round ${resolvedRound} · Cycle ${resolvedCycle} · ${formatTime(totalRemaining)} left`;
+
+      if (!segment) {
+        elements.timerRing.dataset.phase = 'complete';
+        elements.timerLabel.textContent = 'Complete';
+        elements.phaseIndicator.textContent = 'Workout complete';
+        elements.phaseTime.textContent = '00:00';
+        clearRoundArcs();
+        highlightExercise(-1);
+        elements.currentAction.textContent = 'Finished';
+        elements.currentExercise.textContent = 'Workout complete. Great effort!';
+        elements.nextAction.textContent = '—';
+        elements.nextExercise.textContent = 'Session complete';
+        return;
       }
 
-      function getExerciseName(index) {
-        if (index == null || index < 0) return 'Circuit';
-        return exercises[index]?.name ?? 'Circuit';
+      const phaseMeta = {
+        prepare: { phase: 'prepare', label: 'Prepare' },
+        work: { phase: 'work', label: 'Work' },
+        restRound: { phase: 'rest', label: 'Rest' },
+        restCycle: { phase: 'cycleRest', label: 'Cycle Rest' }
+      }[segment.type] ?? { phase: 'prepare', label: 'Prepare' };
+
+      const paused = state.isPaused && state.isRunning;
+      elements.timerRing.dataset.phase = paused ? 'paused' : phaseMeta.phase;
+      elements.timerLabel.textContent = paused ? 'Paused' : phaseMeta.label;
+      elements.phaseTime.textContent = formatTime(state.segmentRemaining);
+
+      updateRoundDisplay(segment);
+
+      let currentExerciseText = '';
+      let highlightIndex = segment.exerciseIndex ?? -1;
+
+      if (segment.type === 'prepare') {
+        const firstWork = state.schedule.find((entry) => entry.type === 'work');
+        const firstName = firstWork ? getExerciseName(firstWork.exerciseIndex) : 'first exercise';
+        currentExerciseText = firstWork ? `First up: ${firstName}` : 'Dial in your form.';
+        highlightIndex = firstWork ? firstWork.exerciseIndex : -1;
+      } else if (segment.type === 'work') {
+        currentExerciseText = `Go hard: ${getExerciseName(highlightIndex)}`;
+      } else if (segment.type === 'restRound') {
+        const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((entry) => entry.type === 'work');
+        const nextName = nextWork ? getExerciseName(nextWork.exerciseIndex) : getExerciseName(segment.exerciseIndex);
+        currentExerciseText = nextWork ? `Recover before ${nextName}` : 'Take a quick breather.';
+        highlightIndex = nextWork ? nextWork.exerciseIndex : segment.exerciseIndex ?? -1;
+      } else if (segment.type === 'restCycle') {
+        const targetCycle = Math.min(segment.cycle + 1, config.totalCycles);
+        currentExerciseText = segment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down and celebrate.';
+        highlightIndex = -1;
+      } else {
+        currentExerciseText = 'Stay focused and breathe.';
       }
 
-      function updateUI() {
-        const segment = state.schedule[state.currentSegmentIndex];
-        const nextSegment = state.schedule[state.currentSegmentIndex + 1];
-        const totalRounds = Math.max(1, config.totalRounds);
-        const totalCycles = Math.max(1, config.totalCycles);
-
-        const resolvedRound = segment && segment.round > 0 ? Math.min(segment.round, totalRounds) : 1;
-        const resolvedCycle = segment && segment.cycle > 0 ? Math.min(segment.cycle, totalCycles) : 1;
-
-        updateProgressRing(elements.roundProgress, totalRounds ? resolvedRound / totalRounds : 0);
-        updateProgressRing(elements.cycleProgress, totalCycles ? resolvedCycle / totalCycles : 0);
-
-        elements.roundTracker.textContent = `${resolvedRound} / ${totalRounds}`;
-        elements.cycleTracker.textContent = `${resolvedCycle} / ${totalCycles}`;
-
-        const totalRemaining = Math.max(0, state.totalRemaining);
-        elements.segmentCountdown.textContent = formatTime(totalRemaining);
-        elements.summaryLabel.textContent = `Round ${resolvedRound} · Cycle ${resolvedCycle} · ${formatTime(totalRemaining)} left`;
-
-        if (!segment) {
-          elements.timerRing.dataset.phase = 'complete';
-          elements.timerLabel.textContent = 'Complete';
-          elements.phaseIndicator.textContent = 'Workout complete';
-          elements.phaseTime.textContent = '00:00';
-          setActiveArcProgress(0, 1);
-          clearRoundArcs();
-          highlightExercise(-1);
-          elements.currentAction.textContent = 'Finished';
-          elements.currentExercise.textContent = 'Workout complete. Great effort!';
-          elements.nextAction.textContent = '—';
-          elements.nextExercise.textContent = 'Session complete';
-          return;
-        }
-
-        const phaseMeta = {
-          prepare: { phase: 'prepare', label: 'Prepare' },
-          work: { phase: 'work', label: 'Work' },
-          restRound: { phase: 'rest', label: 'Rest' },
-          restCycle: { phase: 'cycleRest', label: 'Cycle Rest' }
-        }[segment.type] ?? { phase: 'prepare', label: 'Prepare' };
-
-        const paused = state.isPaused && state.isRunning;
-        elements.timerRing.dataset.phase = paused ? 'paused' : phaseMeta.phase;
-        elements.timerLabel.textContent = paused ? 'Paused' : phaseMeta.label;
-
-        const segmentDuration = segment.duration || 0;
-        elements.phaseTime.textContent = formatTime(state.segmentRemaining);
-        setActiveArcProgress(state.segmentRemaining, segmentDuration);
-
-        const isRoundPhase = segment.type === 'work' || segment.type === 'restRound';
-        if (isRoundPhase) {
-          const upcomingRest =
-            segment.type === 'work'
-              ? (segment.round < config.totalRounds ? config.restBetweenRounds : 0)
-              : segment.duration;
-          updateRoundArcs(config.workDuration, upcomingRest);
-        } else {
-          clearRoundArcs();
-        }
-
-        let currentExerciseText = '';
-        let highlightIndex = segment.exerciseIndex ?? -1;
-
-        if (segment.type === 'prepare') {
-          const firstWork = state.schedule.find((entry) => entry.type === 'work');
-          const firstName = firstWork ? getExerciseName(firstWork.exerciseIndex) : 'first exercise';
-          currentExerciseText = firstWork ? `First up: ${firstName}` : 'Dial in your form.';
-          highlightIndex = firstWork ? firstWork.exerciseIndex : -1;
-        } else if (segment.type === 'work') {
-          currentExerciseText = `Go hard: ${getExerciseName(highlightIndex)}`;
-        } else if (segment.type === 'restRound') {
-          const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((entry) => entry.type === 'work');
-          const nextName = nextWork ? getExerciseName(nextWork.exerciseIndex) : getExerciseName(segment.exerciseIndex);
-          currentExerciseText = nextWork ? `Recover before ${nextName}` : 'Take a quick breather.';
-          highlightIndex = nextWork ? nextWork.exerciseIndex : segment.exerciseIndex ?? -1;
-        } else if (segment.type === 'restCycle') {
-          const targetCycle = Math.min(segment.cycle + 1, config.totalCycles);
-          currentExerciseText = segment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down and celebrate.';
-          highlightIndex = -1;
-        } else {
-          currentExerciseText = 'Stay focused and breathe.';
-        }
-
-        if (paused) {
-          elements.phaseIndicator.textContent = 'Paused';
-          elements.currentAction.textContent = 'Paused';
-          elements.currentExercise.textContent = currentExerciseText;
-        } else {
-          elements.phaseIndicator.textContent = phaseMeta.label;
-          elements.currentAction.textContent = phaseMeta.label;
-          elements.currentExercise.textContent = currentExerciseText;
-        }
-
-        highlightExercise(highlightIndex);
-
-        if (nextSegment) {
-          const nextLabel = {
-            prepare: 'Prepare',
-            work: 'Work',
-            restRound: 'Rest',
-            restCycle: 'Cycle Rest'
-          }[nextSegment.type] ?? 'Prepare';
-          elements.nextAction.textContent = nextLabel;
-          if (nextSegment.type === 'work') {
-            elements.nextExercise.textContent = getExerciseName(nextSegment.exerciseIndex);
-          } else if (nextSegment.type === 'restRound') {
-            elements.nextExercise.textContent = 'Recovery window';
-          } else if (nextSegment.type === 'restCycle') {
-            const targetCycle = Math.min(nextSegment.cycle + 1, config.totalCycles);
-            elements.nextExercise.textContent = nextSegment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down';
-          } else {
-            elements.nextExercise.textContent = 'Pre-start countdown';
-          }
-        } else {
-          elements.nextAction.textContent = 'Finish';
-          elements.nextExercise.textContent = 'Final push to complete.';
-        }
-
-        const initialDuration = state.schedule[0]?.duration ?? 0;
-        const atBeginning =
-          state.currentSegmentIndex === 0 &&
-          Math.abs(state.segmentRemaining - initialDuration) < 0.5 &&
-          !state.isRunning;
-        const atEnd =
-          state.currentSegmentIndex >= state.schedule.length - 1 &&
-          !state.isRunning &&
-          state.totalRemaining < 0.5;
-
-        controls.start.disabled = state.isRunning && !state.isPaused;
-        controls.pause.disabled = !state.isRunning;
-        controls.pause.textContent = state.isPaused ? 'Resume' : 'Pause';
-        controls.stop.disabled = atBeginning && !state.isRunning;
-        controls.reset.disabled = atBeginning && !state.isRunning;
-        controls.prev.disabled =
-          state.schedule.length === 0 ||
-          findNextWork(state.currentSegmentIndex, -1) === state.currentSegmentIndex;
-        controls.next.disabled =
-          state.schedule.length === 0 ||
-          findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex ||
-          atEnd;
+      if (paused) {
+        elements.phaseIndicator.textContent = 'Paused';
+        elements.currentAction.textContent = 'Paused';
+        elements.currentExercise.textContent = currentExerciseText;
+      } else {
+        elements.phaseIndicator.textContent = phaseMeta.label;
+        elements.currentAction.textContent = phaseMeta.label;
+        elements.currentExercise.textContent = currentExerciseText;
       }
+
+      highlightExercise(highlightIndex);
+
+      if (nextSegment) {
+        const nextLabel = {
+          prepare: 'Prepare',
+          work: 'Work',
+          restRound: 'Rest',
+          restCycle: 'Cycle Rest'
+        }[nextSegment.type] ?? 'Prepare';
+        elements.nextAction.textContent = nextLabel;
+        if (nextSegment.type === 'work') {
+          elements.nextExercise.textContent = getExerciseName(nextSegment.exerciseIndex);
+        } else if (nextSegment.type === 'restRound') {
+          elements.nextExercise.textContent = 'Recovery window';
+        } else if (nextSegment.type === 'restCycle') {
+          const targetCycle = Math.min(nextSegment.cycle + 1, config.totalCycles);
+          elements.nextExercise.textContent = nextSegment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down';
+        } else {
+          elements.nextExercise.textContent = 'Pre-start countdown';
+        }
+      } else {
+        elements.nextAction.textContent = 'Finish';
+        elements.nextExercise.textContent = 'Final push to complete.';
+      }
+
+      handleSegmentPrompts(segment);
+
+      const initialDuration = state.schedule[0]?.duration ?? 0;
+      const atBeginning =
+        state.currentSegmentIndex === 0 &&
+        Math.abs(state.segmentRemaining - initialDuration) < 0.5 &&
+        !state.isRunning;
+      const atEnd =
+        state.currentSegmentIndex >= state.schedule.length - 1 &&
+        !state.isRunning &&
+        state.totalRemaining < 0.5;
+
+      controls.start.disabled = state.isRunning && !state.isPaused;
+      controls.pause.disabled = !state.isRunning;
+      controls.pause.textContent = state.isPaused ? 'Resume' : 'Pause';
+      controls.stop.disabled = atBeginning && !state.isRunning;
+      controls.reset.disabled = atBeginning && !state.isRunning;
+      controls.prev.disabled =
+        state.schedule.length === 0 ||
+        findNextWork(state.currentSegmentIndex, -1) === state.currentSegmentIndex;
+      controls.next.disabled =
+        state.schedule.length === 0 ||
+        findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex ||
+        atEnd;
+    }
 
       function advance(delta) {
         let remainingDelta = delta;
@@ -1539,96 +2097,109 @@
           state.isRunning = true;
           state.isPaused = false;
           state.lastTimestamp = null;
+          playMusic();
           state.animationFrame = requestAnimationFrame(tick);
         } else if (state.isPaused) {
           state.isPaused = false;
           state.lastTimestamp = null;
+          playMusic();
           state.animationFrame = requestAnimationFrame(tick);
         }
         updateUI();
       }
 
-      function pauseTimer() {
-        if (!state.isRunning) return;
-        state.isPaused = !state.isPaused;
-        if (!state.isPaused) {
-          state.lastTimestamp = null;
-          state.animationFrame = requestAnimationFrame(tick);
-        }
-        updateUI();
+    function pauseTimer() {
+      if (!state.isRunning) return;
+      state.isPaused = !state.isPaused;
+      if (state.isPaused) {
+        pauseMusic();
+        playPrompt('pause', { duck: false });
+      } else {
+        playMusic();
+        playPrompt('start');
+        state.lastTimestamp = null;
+        state.animationFrame = requestAnimationFrame(tick);
       }
+      updateUI();
+    }
 
-      function stopTimer() {
-        state.isRunning = false;
-        state.isPaused = false;
-        if (state.animationFrame) {
-          cancelAnimationFrame(state.animationFrame);
-          state.animationFrame = null;
-        }
-        resetState();
+    function stopTimer() {
+      state.isRunning = false;
+      state.isPaused = false;
+      if (state.animationFrame) {
+        cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
       }
+      resetState();
+      stopMusic();
+    }
 
-      function resetTimer() {
-        if (state.animationFrame) {
-          cancelAnimationFrame(state.animationFrame);
-          state.animationFrame = null;
-        }
-        state.isRunning = false;
-        state.isPaused = false;
-        setSegment(0, state.schedule[0]?.duration ?? 0);
-        updateUI();
+    function resetTimer() {
+      if (state.animationFrame) {
+        cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
       }
+      state.isRunning = false;
+      state.isPaused = false;
+      resetPromptState();
+      setSegment(0, state.schedule[0]?.duration ?? 0);
+      pauseMusic(true);
+      updateUI();
+    }
 
-      function findNextWork(fromIndex, direction) {
-        if (state.schedule.length === 0) return fromIndex;
-        if (direction > 0) {
-          for (let i = fromIndex + 1; i < state.schedule.length; i += 1) {
-            if (state.schedule[i].type === 'work') return i;
-          }
-          return state.schedule.length - 1;
-        }
-        for (let i = fromIndex - 1; i >= 0; i -= 1) {
+    function findNextWork(fromIndex, direction) {
+      if (state.schedule.length === 0) return fromIndex;
+      if (direction > 0) {
+        for (let i = fromIndex + 1; i < state.schedule.length; i += 1) {
           if (state.schedule[i].type === 'work') return i;
         }
-        return 0;
+        return fromIndex;
       }
-
-      function skip(direction) {
-        if (state.schedule.length === 0) return;
-        const nextWorkIndex = findNextWork(state.currentSegmentIndex, direction);
-        if (nextWorkIndex === state.currentSegmentIndex) {
-          return;
-        }
-        state.currentSegmentIndex = nextWorkIndex;
-        state.segmentRemaining = state.schedule[nextWorkIndex].duration;
-        state.totalRemaining = state.segmentRemaining;
-        for (let i = nextWorkIndex + 1; i < state.schedule.length; i += 1) {
-          state.totalRemaining += state.schedule[i].duration;
-        }
-        state.lastTimestamp = null;
-        updateUI();
+      for (let i = fromIndex - 1; i >= 0; i -= 1) {
+        if (state.schedule[i].type === 'work') return i;
       }
+      return fromIndex;
+    }
 
-      controls.start.addEventListener('click', startTimer);
-      controls.pause.addEventListener('click', pauseTimer);
-      controls.stop.addEventListener('click', stopTimer);
-      controls.reset.addEventListener('click', resetTimer);
-      controls.next.addEventListener('click', () => skip(1));
-      controls.prev.addEventListener('click', () => skip(-1));
+    function skip(direction) {
+      if (state.schedule.length === 0) return;
+      const nextWorkIndex = findNextWork(state.currentSegmentIndex, direction);
+      if (nextWorkIndex === state.currentSegmentIndex) {
+        return;
+      }
+      resetPromptState();
+      setSegment(nextWorkIndex, state.schedule[nextWorkIndex].duration);
+      state.lastTimestamp = null;
+    }
 
-      openConfigBtn.addEventListener('click', () => {
-        configPanel.dataset.open = 'true';
-      });
+    controls.start.addEventListener('click', startTimer);
+    controls.pause.addEventListener('click', pauseTimer);
+    controls.stop.addEventListener('click', stopTimer);
+    controls.reset.addEventListener('click', resetTimer);
+    controls.next.addEventListener('click', () => skip(1));
+    controls.prev.addEventListener('click', () => skip(-1));
 
-      closeConfigBtn.addEventListener('click', () => {
-        configPanel.dataset.open = 'false';
-      });
+    openConfigBtn.addEventListener('click', () => {
+      configPanel.dataset.open = 'true';
+    });
 
-      applyDefaultsBtn.addEventListener('click', () => {
-        if (!activeDefaults) return;
-        setFormValuesFromSettings(activeDefaults);
-        updateConfigFromForm();
-      });
+    closeConfigBtn.addEventListener('click', () => {
+      configPanel.dataset.open = 'false';
+    });
+
+    applyDefaultsBtn.addEventListener('click', () => {
+      if (!activeDefaults) return;
+      setFormValuesFromSettings(activeDefaults);
+      updateConfigFromForm();
+      const defaultMusicSlug =
+        activeDefaultMusicSlug ||
+        audioLibrary.defaultMusic ||
+        (audioLibrary.music[0]?.slug ?? null);
+      if (defaultMusicSlug) {
+        const autoPlay = state.isRunning && !state.isPaused;
+        setMusicTrackBySlug(defaultMusicSlug, { autoPlay });
+      }
+    });
 
       function setFormValuesFromSettings(settings) {
         form.prepareDuration.value = settings.prepareDuration;
@@ -1649,23 +2220,30 @@
         return clean;
       }
 
-      function updateConfigFromForm() {
-        const nextSettings = {
-          prepareDuration: form.prepareDuration.value,
-          totalRounds: form.rounds.value,
-          totalCycles: form.cycles.value,
-          workDuration: form.workDuration.value,
-          restBetweenRounds: form.restRounds.value,
-          restBetweenCycles: form.restCycles.value
-        };
-        applySettingsToConfig(nextSettings);
-        if (isAppReady) {
-          resetState();
-          setWorkoutInUrl(activeWorkout?.slug);
+    function updateConfigFromForm() {
+      const wasRunning = state.isRunning;
+      const nextSettings = {
+        prepareDuration: form.prepareDuration.value,
+        totalRounds: form.rounds.value,
+        totalCycles: form.cycles.value,
+        workDuration: form.workDuration.value,
+        restBetweenRounds: form.restRounds.value,
+        restBetweenCycles: form.restCycles.value
+      };
+      applySettingsToConfig(nextSettings);
+      if (isAppReady) {
+        resetState();
+        if (wasRunning) {
+          stopMusic();
         }
+        setWorkoutInUrl(activeWorkout?.slug);
       }
+    }
 
-      form.addEventListener('input', updateConfigFromForm);
+      form.addEventListener('input', (event) => {
+        if (event.target === musicSelect) return;
+        updateConfigFromForm();
+      });
 
       function normalizeWorkouts(rawList) {
         if (!Array.isArray(rawList)) return [];
@@ -1674,6 +2252,9 @@
             if (!item || !item.slug) return null;
             const slug = String(item.slug).toLowerCase();
             const settings = sanitizeSettings(item.settings || {});
+            const audio = item.audio && typeof item.audio === 'object'
+              ? { music: item.audio.music ? String(item.audio.music).toLowerCase() : null }
+              : { music: null };
             return {
               slug,
               title: item.title || slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
@@ -1681,13 +2262,15 @@
               exercisesHeading: item.exercisesHeading || 'Exercise Circuit',
               summary: item.summary || '',
               settings,
-              exercises: Array.isArray(item.exercises) ? item.exercises : []
+              exercises: Array.isArray(item.exercises) ? item.exercises : [],
+              audio
             };
           })
           .filter(Boolean);
       }
 
       async function loadWorkouts() {
+        let loaded = false;
         try {
           const response = await fetch(workoutsEndpoint, { cache: 'no-store' });
           if (!response.ok) {
@@ -1698,12 +2281,26 @@
           const normalized = normalizeWorkouts(list);
           if (normalized.length > 0) {
             workouts = normalized;
-            return;
+            audioLibrary = normalizeAudioLibrary(Array.isArray(payload) ? null : payload.audioLibrary);
+            if (!audioLibrary.music.length) {
+              audioLibrary = normalizeAudioLibrary(fallbackAudioLibrary);
+            }
+            loaded = true;
           }
         } catch (error) {
           console.warn('Falling back to bundled workouts.', error);
         }
-        workouts = normalizeWorkouts(fallbackWorkouts);
+        if (!loaded) {
+          workouts = normalizeWorkouts(fallbackWorkouts);
+          audioLibrary = normalizeAudioLibrary(fallbackAudioLibrary);
+        }
+        if (!audioLibrary.music.length) {
+          audioLibrary = normalizeAudioLibrary(fallbackAudioLibrary);
+        }
+        if (!audioLibrary.defaultMusic && audioLibrary.music.length) {
+          audioLibrary.defaultMusic = audioLibrary.music[0].slug;
+        }
+        loadPromptSources(audioLibrary.prompts);
       }
 
       function populateWorkoutSelect() {
@@ -1723,6 +2320,14 @@
           selectWorkout(workout);
         }
       });
+
+      if (musicSelect) {
+        musicSelect.addEventListener('change', (event) => {
+          const slug = event.target.value || null;
+          const autoPlay = state.isRunning && !state.isPaused;
+          setMusicTrackBySlug(slug, { autoPlay });
+        });
+      }
 
       function setWorkoutInUrl(slug) {
         if (!slug) return;
@@ -1763,15 +2368,28 @@
         state.isRunning = false;
         state.isPaused = false;
         isAppReady = false;
+        stopMusic();
 
         activeWorkout = workout;
         activeDefaults = cloneSettings(workout.settings);
+        activeDefaultMusicSlug =
+          (workout.audio && workout.audio.music ? String(workout.audio.music).toLowerCase() : null) ||
+          audioLibrary.defaultMusic ||
+          (audioLibrary.music[0]?.slug ?? null);
         exercises = Array.isArray(workout.exercises) ? workout.exercises.slice() : [];
         applySettingsToConfig(activeDefaults);
         syncFormFromConfig();
         renderExerciseCards();
         updateBranding(workout);
         workoutSelect.value = workout.slug;
+        populateMusicSelect();
+        if (activeDefaultMusicSlug) {
+          setMusicTrackBySlug(activeDefaultMusicSlug);
+        } else if (audioLibrary.music.length) {
+          setMusicTrackBySlug(audioLibrary.music[0].slug);
+        } else {
+          setMusicSelectValue('');
+        }
         resetState();
         highlightExercise(-1);
         setWorkoutInUrl(workout.slug);
@@ -1785,13 +2403,21 @@
           if (match) {
             return match;
           }
-        }
-        return workouts[0] ?? null;
       }
+      return workouts[0] ?? null;
+    }
+
+    function updateClock() {
+      if (!elements.currentTime) return;
+      const now = new Date();
+      const formatted = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      elements.currentTime.textContent = formatted;
+    }
 
       async function initialize() {
         await loadWorkouts();
         populateWorkoutSelect();
+        populateMusicSelect();
         const initialWorkout = pickInitialWorkout();
         if (initialWorkout) {
           selectWorkout(initialWorkout);
@@ -1800,6 +2426,9 @@
           resetState();
         }
       }
+
+      updateClock();
+      setInterval(updateClock, 30000);
 
       initialize();
     })();

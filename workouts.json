@@ -1,4 +1,32 @@
 {
+  "audioLibrary": {
+    "defaultMusic": "focus-30",
+    "music": [
+      {
+        "slug": "focus-30",
+        "label": "Focus Flow - 30 Minutes",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=yScbNQYrR_A",
+        "duration": 1800
+      },
+      {
+        "slug": "endurance-70",
+        "label": "Endurance Builder - 70 Minutes",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=neAGV0RMFV8",
+        "duration": 4200
+      }
+    ],
+    "prompts": {
+      "countdown": "audio/RB_countdown.mp3",
+      "pause": "audio/RB_pause.mp3",
+      "start": "audio/RB_start.mp3",
+      "tenSecondsLeft": "audio/RB_tenSecondsLeft.mp3",
+      "beeps": "audio/RB_beeps.mp3",
+      "rest": "audio/RB_rest.mp3",
+      "finished": "audio/RB_finished.mp3"
+    }
+  },
   "workouts": [
     {
       "slug": "rb100",
@@ -61,7 +89,10 @@
             "url": "https://www.youtube.com/watch?v=L219ltL15zk"
           }
         }
-      ]
+      ],
+      "audio": {
+        "music": "focus-30"
+      }
     },
     {
       "slug": "ignite-intervals",
@@ -83,7 +114,7 @@
           "description": "Drive through the hips and punch overhead for total-body power.",
           "video": {
             "type": "youtube",
-            "url": "https://www.youtube.com/watch?v=3mlhF3dptAo"
+            "url": "https://www.youtube.com/watch?v=0P7nlJLG4rg"
           }
         },
         {
@@ -91,7 +122,7 @@
           "description": "Explode onto the box, stick the landing, and rebound with athletic control.",
           "video": {
             "type": "youtube",
-            "url": "https://www.youtube.com/watch?v=NBY9-kTuHEk"
+            "url": "https://www.youtube.com/watch?v=2fZCk_zYbzA"
           }
         },
         {
@@ -99,7 +130,7 @@
           "description": "Alternate heavy slams to spike the heart rate and challenge core stability.",
           "video": {
             "type": "youtube",
-            "url": "https://www.youtube.com/watch?v=7wDx6mZDxA8"
+            "url": "https://www.youtube.com/watch?v=4FJ3eYJsaGI"
           }
         },
         {
@@ -107,10 +138,13 @@
           "description": "Crank max effort through the pedals and handles for a brutal finisher.",
           "video": {
             "type": "youtube",
-            "url": "https://www.youtube.com/watch?v=PHReR7tC_tw"
+            "url": "https://www.youtube.com/watch?v=1jdr8mP7LPM"
           }
         }
-      ]
+      ],
+      "audio": {
+        "music": "focus-30"
+      }
     },
     {
       "slug": "mobility-reset",
@@ -175,7 +209,10 @@
             "url": "https://www.youtube.com/watch?v=BiSCSMqx-rE"
           }
         }
-      ]
+      ],
+      "audio": {
+        "music": "endurance-70"
+      }
     }
   ]
 }
