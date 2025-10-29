@@ -615,8 +615,8 @@
   <div class="app-shell">
     <header>
       <div class="branding">
-        <h1>RB100 Workout</h1>
-        <span>30 Minute Circuit</span>
+        <h1 id="workoutTitle">RB100 Workout</h1>
+        <span id="workoutTagline">30 Minute Circuit</span>
       </div>
       <button class="config-toggle" id="openConfig" type="button">⚙️ Configure</button>
     </header>
@@ -670,7 +670,7 @@
       </section>
 
       <section class="exercise-section">
-        <h2>6 Exercise Circuit</h2>
+        <h2 id="exercisesHeading">6 Exercise Circuit</h2>
         <div class="exercise-grid" id="exerciseGrid"></div>
       </section>
     </main>
@@ -695,6 +695,12 @@
         <h2>Configuration</h2>
       </header>
       <form id="configForm">
+        <div class="field">
+          <label for="workoutSelect">Workout</label>
+          <select id="workoutSelect" name="workout">
+            <option value="rb100">RB100 Workout</option>
+          </select>
+        </div>
         <div class="field">
           <label for="prepareDuration">Prepare (seconds)</label>
           <input type="number" id="prepareDuration" name="prepareDuration" min="0" value="10" />
@@ -728,392 +734,572 @@
   </div>
 
   <script>
-    const exercises = [
-      // {
-      //   name: 'Kettlebell Swing',
-      //   description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.',
-      //   video: 'media/burpee_standard_v1.mp4'
-      // },
-      {
-        name: 'Kettlebell Swing',
-        description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.',
-        video: {
-          type: 'youtube',
-          url: 'https://www.youtube.com/watch?v=mKDIuUbH94Q',
-          title: ''
+    (function () {
+      const workoutsEndpoint = 'workouts.json';
+      const fallbackWorkouts = [
+        {
+          slug: 'rb100',
+          title: 'RB100 Workout',
+          tagline: '30 Minute Circuit',
+          exercisesHeading: '6 Exercise Circuit',
+          summary: 'Signature kettlebell conditioning set.',
+          settings: {
+            prepareDuration: 10,
+            totalRounds: 6,
+            totalCycles: 4,
+            workDuration: 60,
+            restBetweenRounds: 10,
+            restBetweenCycles: 60
+          },
+          exercises: [
+            {
+              name: 'Kettlebell Swing',
+              description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.',
+              video: 'media/burpee_standard_v1.mp4'
+            },
+            {
+              name: 'Push-Up to T Rotation',
+              description: 'Alternate a side plank reach between each rep to build rotational stability.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=dSDoVEV2298',
+                title: 'Push-Up to T Rotation demo'
+              }
+            },
+            {
+              name: 'Reverse Lunge & Press',
+              description: 'Step back, drop the knee, and drive overhead with the opposite arm on return.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=ZPoMxOrIeO4'
+              }
+            },
+            {
+              name: 'Renegade Row',
+              description: 'Brace through the core, row the bell, and resist trunk rotation under load.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=LccyTxiUrhg'
+              }
+            },
+            {
+              name: 'V-Up Reach',
+              description: 'Snap to a V-sit while touching toes and controlling the eccentric descent.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=7UVgs18Y1P4'
+              }
+            },
+            {
+              name: 'Squat Thruster',
+              description: 'Sink deep into a squat and explode into a powerful overhead drive.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=L219ltL15zk'
+              }
+            }
+          ]
+        },
+        {
+          slug: 'ignite-intervals',
+          title: 'Ignite Intervals',
+          tagline: '20 Minute Power Session',
+          exercisesHeading: '4 Power Moves',
+          summary: 'Short, sharp metabolic finisher.',
+          settings: {
+            prepareDuration: 20,
+            totalRounds: 4,
+            totalCycles: 3,
+            workDuration: 45,
+            restBetweenRounds: 15,
+            restBetweenCycles: 75
+          },
+          exercises: [
+            {
+              name: 'Dumbbell Snatch',
+              description: 'Drive through the hips and punch overhead for total-body power.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=0P7nlJLG4rg'
+              }
+            },
+            {
+              name: 'Box Jump Rebound',
+              description: 'Explode onto the box, stick the landing, and rebound with athletic control.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=2fZCk_zYbzA'
+              }
+            },
+            {
+              name: 'Battle Rope Slams',
+              description: 'Alternate heavy slams to spike the heart rate and challenge core stability.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=4FJ3eYJsaGI'
+              }
+            },
+            {
+              name: 'Assault Bike Sprint',
+              description: 'Crank max effort through the pedals and handles for a brutal finisher.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=1jdr8mP7LPM'
+              }
+            }
+          ]
+        },
+        {
+          slug: 'mobility-reset',
+          title: 'Mobility Reset',
+          tagline: 'Low Impact Flow',
+          exercisesHeading: '6 Mobility Drills',
+          summary: 'Restore and lengthen with controlled tempo.',
+          settings: {
+            prepareDuration: 15,
+            totalRounds: 6,
+            totalCycles: 2,
+            workDuration: 45,
+            restBetweenRounds: 15,
+            restBetweenCycles: 90
+          },
+          exercises: [
+            {
+              name: 'World\'s Greatest Stretch',
+              description: 'Flow between lunge, thoracic reach, and hamstring sweep to open the chain.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=XBqRr5nBKj8'
+              }
+            },
+            {
+              name: 'Thread the Needle',
+              description: 'Mobilise the thoracic spine while keeping hips stacked and breathing steady.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=R5rHMyWyfKM'
+              }
+            },
+            {
+              name: 'Cossack Squat',
+              description: 'Sink into lateral depth to unlock hips and ankles with control.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=_a7nK5E7EYE'
+              }
+            },
+            {
+              name: 'Dead Bug Reach',
+              description: 'Brace the core while moving opposing limbs through controlled range.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=7Q1gRRtTDgY'
+              }
+            },
+            {
+              name: 'Prone Snow Angels',
+              description: 'Sweep the arms overhead while squeezing the upper back and glutes.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=3jzCoqxKPlM'
+              }
+            },
+            {
+              name: '90/90 Switch',
+              description: 'Rotate through internal and external hip rotation without leaning back.',
+              video: {
+                type: 'youtube',
+                url: 'https://www.youtube.com/watch?v=9-dg9zIIebw'
+              }
+            }
+          ]
         }
-      },
-      {
-        name: 'Push-Up to T Rotation',
-        description: 'Alternate a side plank reach between each rep to build rotational stability.',
-        video: {
-          type: 'youtube',
-          url: 'https://www.youtube.com/watch?v=dSDoVEV2298',
-          title: 'Push-Up to T Rotation demo'
-        }
-      },
-      {
-        name: 'Reverse Lunge & Press',
-        description: 'Step back, drop the knee, and drive overhead with the opposite arm on return.',
-        video: {
-          type: 'youtube',
-          url: 'https://www.youtube.com/watch?v=ZPoMxOrIeO4',
-          title: ''
-        }
-      },
-      {
-        name: 'Renegade Row',
-        description: 'Brace through the core, row the bell, and resist trunk rotation under load.',
-        video: {
-          type: 'youtube',
-          url: 'https://www.youtube.com/watch?v=LccyTxiUrhg',
-          title: ''
-        }
-      },
-      {
-        name: 'V-Up Reach',
-        description: 'Snap to a V-sit while touching toes and controlling the eccentric descent.',
-        video: {
-          type: 'youtube',
-          url: 'https://www.youtube.com/watch?v=7UVgs18Y1P4',
-          title: ''
-        }
-      },
-      {
-        name: 'Squat Thruster',
-        description: 'Sink deep into a squat and explode into a powerful overhead drive.',
-        video: {
-          type: 'youtube',
-          url: 'https://www.youtube.com/watch?v=L219ltL15zk',
-          title: ''
-        }
-      }
-    ];
+      ];
 
-    const exerciseGrid = document.getElementById('exerciseGrid');
+      const defaultSettings = {
+        prepareDuration: 10,
+        totalRounds: 6,
+        totalCycles: 4,
+        workDuration: 60,
+        restBetweenRounds: 10,
+        restBetweenCycles: 60
+      };
 
-    function extractYouTubeId(raw) {
-      if (!raw) return null;
-      if (/^[\w-]{11}$/.test(raw)) {
-        return raw;
-      }
-      try {
-        const url = new URL(raw, window.location.href);
-        const host = url.hostname.replace(/^www\./, '');
-        if (host === 'youtu.be') {
-          return url.pathname.slice(1).split('/')[0] || null;
-        }
-        if (host === 'youtube.com' || host === 'music.youtube.com') {
-          if (url.searchParams.has('v')) {
-            return url.searchParams.get('v');
-          }
-          const parts = url.pathname.split('/').filter(Boolean);
-          const embedIndex = parts.indexOf('embed');
-          if (embedIndex !== -1 && parts[embedIndex + 1]) {
-            return parts[embedIndex + 1];
-          }
-          if (parts[0] === 'shorts' && parts[1]) {
-            return parts[1];
-          }
-        }
-      } catch (error) {
-        return null;
-      }
-      return null;
-    }
+      const config = { ...defaultSettings };
 
-    function resolveVideoConfig(video) {
-      if (!video) return null;
-      if (typeof video === 'string') {
-        const youtubeId = extractYouTubeId(video);
-        if (youtubeId) {
-          return {
-            kind: 'youtube',
-            src: `https://www.youtube.com/embed/${youtubeId}`,
-            videoId: youtubeId
-          };
+      const state = {
+        schedule: [],
+        totalDuration: 0,
+        currentSegmentIndex: 0,
+        segmentRemaining: 0,
+        totalRemaining: 0,
+        isRunning: false,
+        isPaused: false,
+        animationFrame: null,
+        lastTimestamp: null
+      };
+
+      const exerciseGrid = document.getElementById('exerciseGrid');
+      const form = document.getElementById('configForm');
+      const applyDefaultsBtn = document.getElementById('applyDefaults');
+      const configPanel = document.getElementById('configPanel');
+      const openConfigBtn = document.getElementById('openConfig');
+      const closeConfigBtn = document.getElementById('closeConfig');
+      const workoutSelect = document.getElementById('workoutSelect');
+
+      const elements = {
+        timerRing: document.getElementById('timerRing'),
+        timerLabel: document.getElementById('timerLabel'),
+        phaseIndicator: document.getElementById('phaseIndicator'),
+        phaseTime: document.getElementById('segmentTimeDisplay'),
+        roundProgress: document.getElementById('roundProgress'),
+        cycleProgress: document.getElementById('cycleProgress'),
+        roundTracker: document.getElementById('roundTracker'),
+        cycleTracker: document.getElementById('cycleTracker'),
+        currentAction: document.getElementById('currentAction'),
+        currentExercise: document.getElementById('currentExercise'),
+        nextAction: document.getElementById('nextAction'),
+        nextExercise: document.getElementById('nextExercise'),
+        segmentCountdown: document.getElementById('segmentCountdown'),
+        summaryLabel: document.getElementById('summaryLabel'),
+        cards: () => Array.from(document.querySelectorAll('.exercise-card')),
+        workoutTitle: document.getElementById('workoutTitle'),
+        workoutTagline: document.getElementById('workoutTagline'),
+        exercisesHeading: document.getElementById('exercisesHeading')
+      };
+
+      const controls = {
+        start: document.getElementById('startWorkout'),
+        pause: document.getElementById('pauseWorkout'),
+        stop: document.getElementById('stopWorkout'),
+        reset: document.getElementById('resetWorkout'),
+        prev: document.getElementById('prevExercise'),
+        next: document.getElementById('nextExercise')
+      };
+
+      const arcs = {
+        work: document.getElementById('workArc'),
+        rest: document.getElementById('restArc'),
+        active: document.getElementById('activeArc')
+      };
+
+      const ARC_RADIUS = 54;
+      const ARC_CIRCUMFERENCE = 2 * Math.PI * ARC_RADIUS;
+
+      if (arcs.active) {
+        arcs.active.style.strokeDasharray = `${ARC_CIRCUMFERENCE} ${ARC_CIRCUMFERENCE}`;
+        arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
+      }
+
+      let workouts = [];
+      let exercises = [];
+      let activeWorkout = null;
+      let activeDefaults = { ...defaultSettings };
+      let isAppReady = false;
+
+      function sanitizeNumber(value, fallback, min) {
+        const num = Number(value);
+        if (Number.isFinite(num)) {
+          return Math.max(min, Math.round(num));
         }
+        return fallback;
+      }
+
+      function sanitizeSettings(input = {}) {
         return {
-          kind: 'file',
-          src: video
+          prepareDuration: sanitizeNumber(input.prepareDuration, defaultSettings.prepareDuration, 0),
+          totalRounds: sanitizeNumber(input.totalRounds, defaultSettings.totalRounds, 1),
+          totalCycles: sanitizeNumber(input.totalCycles, defaultSettings.totalCycles, 1),
+          workDuration: sanitizeNumber(input.workDuration, defaultSettings.workDuration, 5),
+          restBetweenRounds: sanitizeNumber(input.restBetweenRounds, defaultSettings.restBetweenRounds, 0),
+          restBetweenCycles: sanitizeNumber(input.restBetweenCycles, defaultSettings.restBetweenCycles, 0)
         };
       }
-      if (typeof video === 'object') {
-        if (video.type === 'youtube') {
-          const explicitEmbed = video.embed ?? video.src;
-          const youtubeId = video.id ?? extractYouTubeId(video.url ?? explicitEmbed);
-          const src = explicitEmbed ?? (youtubeId ? `https://www.youtube.com/embed/${youtubeId}` : null);
-          if (src) {
+
+      function cloneSettings(settings) {
+        return sanitizeSettings(settings);
+      }
+
+      function formatTime(totalSeconds) {
+        const clamped = Math.max(0, Math.round(totalSeconds));
+        const hours = Math.floor(clamped / 3600);
+        const minutes = Math.floor((clamped % 3600) / 60);
+        const seconds = clamped % 60;
+        const segments = [];
+        if (hours > 0) {
+          segments.push(String(hours).padStart(2, '0'));
+        }
+        segments.push(String(minutes).padStart(2, '0'));
+        segments.push(String(seconds).padStart(2, '0'));
+        return segments.join(':');
+      }
+
+      function extractYouTubeId(raw) {
+        if (!raw) return null;
+        if (/^[\w-]{11}$/.test(raw)) {
+          return raw;
+        }
+        try {
+          const url = new URL(raw, window.location.href);
+          const host = url.hostname.replace(/^www\./, '');
+          if (host === 'youtu.be') {
+            return url.pathname.slice(1).split('/')[0] || null;
+          }
+          if (host === 'youtube.com' || host === 'music.youtube.com') {
+            if (url.searchParams.has('v')) {
+              return url.searchParams.get('v');
+            }
+            const parts = url.pathname.split('/').filter(Boolean);
+            const embedIndex = parts.indexOf('embed');
+            if (embedIndex !== -1 && parts[embedIndex + 1]) {
+              return parts[embedIndex + 1];
+            }
+            if (parts[0] === 'shorts' && parts[1]) {
+              return parts[1];
+            }
+          }
+        } catch (error) {
+          return null;
+        }
+        return null;
+      }
+
+      function resolveVideoConfig(video) {
+        if (!video) return null;
+        if (typeof video === 'string') {
+          const youtubeId = extractYouTubeId(video);
+          if (youtubeId) {
             return {
               kind: 'youtube',
+              src: `https://www.youtube.com/embed/${youtubeId}`,
+              videoId: youtubeId
+            };
+          }
+          return {
+            kind: 'file',
+            src: video
+          };
+        }
+        if (typeof video === 'object') {
+          if (video.type === 'youtube') {
+            const explicitEmbed = video.embed ?? video.src;
+            const youtubeId = video.id ?? extractYouTubeId(video.url ?? explicitEmbed);
+            const src = explicitEmbed ?? (youtubeId ? `https://www.youtube.com/embed/${youtubeId}` : null);
+            if (src) {
+              return {
+                kind: 'youtube',
+                src,
+                title: video.title ?? '',
+                videoId: youtubeId ?? null
+              };
+            }
+          }
+          const src = video.src ?? video.url;
+          if (src) {
+            return {
+              kind: 'file',
               src,
-              title: video.title ?? '',
-              videoId: youtubeId ?? null
+              title: video.title ?? ''
             };
           }
         }
-        const src = video.src ?? video.url;
-        if (src) {
-          return {
-            kind: 'file',
-            src,
-            title: video.title ?? ''
-          };
+        return null;
+      }
+
+      function withYouTubeLoop(src, videoId) {
+        try {
+          const url = new URL(src, window.location.href);
+          url.searchParams.set('loop', '1');
+          url.searchParams.set('autoplay', '1');
+          url.searchParams.set('mute', '1');
+          url.searchParams.set('playsinline', '1');
+          const id = videoId || url.pathname.split('/').filter(Boolean).pop();
+          if (id) {
+            url.searchParams.set('playlist', id);
+          }
+          return url.toString();
+        } catch (error) {
+          const params = new URLSearchParams();
+          params.set('loop', '1');
+          params.set('autoplay', '1');
+          params.set('mute', '1');
+          params.set('playsinline', '1');
+          if (videoId) {
+            params.set('playlist', videoId);
+          }
+          const separator = src.includes('?') ? '&' : '?';
+          return `${src}${separator}${params.toString()}`;
         }
       }
-      return null;
-    }
 
-    function withYouTubeLoop(src, videoId) {
-      try {
-        const url = new URL(src, window.location.href);
-        url.searchParams.set('loop', '1');
-        url.searchParams.set('autoplay', '1');
-        url.searchParams.set('mute', '1');
-        url.searchParams.set('playsinline', '1');
-        const id = videoId || url.pathname.split('/').filter(Boolean).pop();
-        if (id) {
-          url.searchParams.set('playlist', id);
+      function createVideoWrapper(videoConfig, index) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'video-wrapper';
+        const resolved = resolveVideoConfig(videoConfig);
+        if (resolved?.kind === 'youtube') {
+          const iframe = document.createElement('iframe');
+          iframe.src = withYouTubeLoop(resolved.src, resolved.videoId ?? null);
+          iframe.title = resolved.title || `Exercise video ${index + 1}`;
+          iframe.loading = 'lazy';
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+          iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+          iframe.allowFullscreen = true;
+          wrapper.appendChild(iframe);
+          return wrapper;
         }
-        return url.toString();
-      } catch (error) {
-        const params = new URLSearchParams();
-        params.set('loop', '1');
-        params.set('autoplay', '1');
-        params.set('mute', '1');
-        params.set('playsinline', '1');
-        if (videoId) {
-          params.set('playlist', videoId);
+        if (resolved?.kind === 'file') {
+          const video = document.createElement('video');
+          video.src = resolved.src;
+          video.controls = true;
+          video.preload = 'metadata';
+          video.autoplay = true;
+          video.muted = true;
+          video.defaultMuted = true;
+          video.loop = true;
+          video.playsInline = true;
+          video.setAttribute('muted', '');
+          video.setAttribute('autoplay', '');
+          video.setAttribute('playsinline', '');
+          video.title = resolved.title || `Exercise video ${index + 1}`;
+          wrapper.appendChild(video);
+          return wrapper;
         }
-        const separator = src.includes('?') ? '&' : '?';
-        return `${src}${separator}${params.toString()}`;
-      }
-    }
-
-    function createVideoWrapper(videoConfig, index) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'video-wrapper';
-      const resolved = resolveVideoConfig(videoConfig);
-      if (resolved?.kind === 'youtube') {
-        const iframe = document.createElement('iframe');
-        iframe.src = withYouTubeLoop(resolved.src, resolved.videoId ?? null);
-        iframe.title = resolved.title || `Exercise video ${index + 1}`;
-        iframe.loading = 'lazy';
-        iframe.allow =
-          'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-        iframe.allowFullscreen = true;
-        wrapper.appendChild(iframe);
+        const placeholder = document.createElement('div');
+        placeholder.className = 'video-placeholder';
+        placeholder.textContent = `Video ${index + 1}`;
+        wrapper.appendChild(placeholder);
         return wrapper;
       }
-      if (resolved?.kind === 'file') {
-        const video = document.createElement('video');
-        video.src = resolved.src;
-        video.controls = true;
-        video.preload = 'metadata';
-        video.autoplay = true;
-        video.muted = true;
-        video.defaultMuted = true;
-        video.loop = true;
-        video.playsInline = true;
-        video.setAttribute('muted', '');
-        video.setAttribute('autoplay', '');
-        video.setAttribute('playsinline', '');
-        video.title = resolved.title || `Exercise video ${index + 1}`;
-        wrapper.appendChild(video);
-        return wrapper;
+
+      function renderExerciseCards() {
+        exerciseGrid.innerHTML = '';
+        if (!Array.isArray(exercises) || exercises.length === 0) {
+          const empty = document.createElement('p');
+          empty.textContent = 'No exercises configured for this workout yet.';
+          exerciseGrid.appendChild(empty);
+          return;
+        }
+        exercises.forEach((exercise, index) => {
+          const card = document.createElement('article');
+          card.className = 'exercise-card';
+          card.dataset.index = index;
+          const videoWrapper = createVideoWrapper(exercise.video, index);
+          const textWrapper = document.createElement('div');
+          const heading = document.createElement('h3');
+          heading.textContent = exercise.name;
+          const description = document.createElement('p');
+          description.textContent = exercise.description;
+          textWrapper.appendChild(heading);
+          textWrapper.appendChild(description);
+          card.appendChild(videoWrapper);
+          card.appendChild(textWrapper);
+          exerciseGrid.appendChild(card);
+        });
       }
-      const placeholder = document.createElement('div');
-      placeholder.className = 'video-placeholder';
-      placeholder.textContent = `Video ${index + 1}`;
-      wrapper.appendChild(placeholder);
-      return wrapper;
-    }
 
-    function renderExerciseCards() {
-      exerciseGrid.innerHTML = '';
-      exercises.forEach((exercise, index) => {
-        const card = document.createElement('article');
-        card.className = 'exercise-card';
-        card.dataset.index = index;
-        const videoWrapper = createVideoWrapper(exercise.video, index);
-        const textWrapper = document.createElement('div');
-        const heading = document.createElement('h3');
-        heading.textContent = exercise.name;
-        const description = document.createElement('p');
-        description.textContent = exercise.description;
-        textWrapper.appendChild(heading);
-        textWrapper.appendChild(description);
-        card.appendChild(videoWrapper);
-        card.appendChild(textWrapper);
-        exerciseGrid.appendChild(card);
-      });
-    }
-
-    renderExerciseCards();
-
-    const config = {
-      prepareDuration: 10,
-      totalRounds: 6,
-      totalCycles: 4,
-      workDuration: 60,
-      restBetweenRounds: 10,
-      restBetweenCycles: 60
-    };
-
-    const state = {
-      schedule: [],
-      totalDuration: 0,
-      currentSegmentIndex: 0,
-      segmentRemaining: 0,
-      totalRemaining: 0,
-      isRunning: false,
-      isPaused: false,
-      animationFrame: null,
-      lastTimestamp: null
-    };
-
-    const elements = {
-      timerRing: document.getElementById('timerRing'),
-      timerLabel: document.getElementById('timerLabel'),
-      phaseIndicator: document.getElementById('phaseIndicator'),
-      phaseTime: document.getElementById('segmentTimeDisplay'),
-      roundProgress: document.getElementById('roundProgress'),
-      cycleProgress: document.getElementById('cycleProgress'),
-      roundTracker: document.getElementById('roundTracker'),
-      cycleTracker: document.getElementById('cycleTracker'),
-      currentAction: document.getElementById('currentAction'),
-      currentExercise: document.getElementById('currentExercise'),
-      nextAction: document.getElementById('nextAction'),
-      nextExercise: document.getElementById('nextExercise'),
-      segmentCountdown: document.getElementById('segmentCountdown'),
-      summaryLabel: document.getElementById('summaryLabel'),
-      cards: () => Array.from(document.querySelectorAll('.exercise-card'))
-    };
-
-    const arcs = {
-      work: document.getElementById('workArc'),
-      rest: document.getElementById('restArc'),
-      active: document.getElementById('activeArc')
-    };
-
-    const ARC_RADIUS = 54;
-    const ARC_CIRCUMFERENCE = 2 * Math.PI * ARC_RADIUS;
-
-    if (arcs.active) {
-      arcs.active.style.strokeDasharray = `${ARC_CIRCUMFERENCE} ${ARC_CIRCUMFERENCE}`;
-      arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
-    }
-
-    function setActiveArcProgress(remaining, total) {
-      if (!arcs.active) return;
-      if (!total || total <= 0) {
-        arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
-        return;
+      function highlightExercise(index) {
+        elements.cards().forEach((card, cardIndex) => {
+          card.classList.toggle('active', cardIndex === index);
+        });
       }
-      const remainingFraction = Math.max(0, Math.min(remaining / total, 1));
-      arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - remainingFraction);
-    }
 
-    function updateRoundArcs(workDuration, restDuration) {
-      if (!arcs.work || !arcs.rest) return;
-      const safeWork = Math.max(0, workDuration);
-      const safeRest = Math.max(0, restDuration);
-      const roundTotal = safeWork + safeRest;
-      if (roundTotal <= 0) {
+      function updateProgressRing(element, progress) {
+        if (!element) return;
+        const clamped = Math.max(0, Math.min(progress, 1));
+        element.style.setProperty('--angle', `${clamped * 360}deg`);
+      }
+
+      function setActiveArcProgress(remaining, total) {
+        if (!arcs.active) return;
+        if (!total || total <= 0) {
+          arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
+          return;
+        }
+        const remainingFraction = Math.max(0, Math.min(remaining / total, 1));
+        arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - remainingFraction);
+      }
+
+      function updateRoundArcs(workDuration, restDuration) {
+        if (!arcs.work || !arcs.rest) return;
+        const safeWork = Math.max(0, workDuration);
+        const safeRest = Math.max(0, restDuration);
+        const roundTotal = safeWork + safeRest;
+        if (roundTotal <= 0) {
+          clearRoundArcs();
+          return;
+        }
+        const workRatio = Math.min(1, safeWork / roundTotal);
+        const restRatio = Math.min(1, safeRest / roundTotal);
+        const workLength = ARC_CIRCUMFERENCE * workRatio;
+        const restLength = ARC_CIRCUMFERENCE * restRatio;
+        arcs.work.style.strokeDasharray = `${workLength} ${ARC_CIRCUMFERENCE}`;
+        arcs.work.style.strokeDashoffset = 0;
+        arcs.work.style.opacity = workLength > 0 ? 1 : 0;
+        arcs.rest.style.strokeDasharray = `${restLength} ${ARC_CIRCUMFERENCE}`;
+        arcs.rest.style.strokeDashoffset = -workLength;
+        arcs.rest.style.opacity = restLength > 0 ? 1 : 0;
+        elements.timerRing.dataset.round = 'true';
+      }
+
+      function clearRoundArcs() {
+        if (!arcs.work || !arcs.rest) return;
+        elements.timerRing.dataset.round = 'false';
         arcs.work.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
         arcs.rest.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
         arcs.rest.style.strokeDashoffset = 0;
         arcs.work.style.strokeDashoffset = 0;
-        elements.timerRing.dataset.round = 'false';
-        return;
-      }
-      const workRatio = Math.min(1, safeWork / roundTotal);
-      const restRatio = Math.min(1, safeRest / roundTotal);
-      const workLength = ARC_CIRCUMFERENCE * workRatio;
-      const restLength = ARC_CIRCUMFERENCE * restRatio;
-      arcs.work.style.strokeDasharray = `${workLength} ${ARC_CIRCUMFERENCE}`;
-      arcs.work.style.strokeDashoffset = 0;
-      arcs.work.style.opacity = workLength > 0 ? 1 : 0;
-      arcs.rest.style.strokeDasharray = `${restLength} ${ARC_CIRCUMFERENCE}`;
-      arcs.rest.style.strokeDashoffset = -workLength;
-      arcs.rest.style.opacity = restLength > 0 ? 1 : 0;
-      elements.timerRing.dataset.round = 'true';
-    }
-
-    function clearRoundArcs() {
-      if (!arcs.work || !arcs.rest) return;
-      elements.timerRing.dataset.round = 'false';
-      arcs.work.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
-      arcs.rest.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
-      arcs.rest.style.strokeDashoffset = 0;
-      arcs.work.style.strokeDashoffset = 0;
-    }
-
-    const controls = {
-      start: document.getElementById('startWorkout'),
-      pause: document.getElementById('pauseWorkout'),
-      stop: document.getElementById('stopWorkout'),
-      reset: document.getElementById('resetWorkout'),
-      prev: document.getElementById('prevExercise'),
-      next: document.getElementById('nextExercise')
-    };
-
-    const configPanel = document.getElementById('configPanel');
-    const openConfigBtn = document.getElementById('openConfig');
-    const closeConfigBtn = document.getElementById('closeConfig');
-    const applyDefaultsBtn = document.getElementById('applyDefaults');
-    const form = document.getElementById('configForm');
-
-    function formatTime(totalSeconds) {
-      const clamped = Math.max(0, Math.round(totalSeconds));
-      const hours = Math.floor(clamped / 3600);
-      const minutes = Math.floor((clamped % 3600) / 60);
-      const seconds = clamped % 60;
-      const segments = [];
-      if (hours > 0) {
-        segments.push(String(hours).padStart(2, '0'));
-      }
-      segments.push(String(minutes).padStart(2, '0'));
-      segments.push(String(seconds).padStart(2, '0'));
-      return segments.join(':');
-    }
-
-    function buildSchedule() {
-      const segments = [];
-      let globalRound = 0;
-
-      if (config.prepareDuration > 0) {
-        segments.push({
-          type: 'prepare',
-          duration: config.prepareDuration,
-          round: 0,
-          cycle: 0,
-          globalRound: 0,
-          exerciseIndex: 0
-        });
       }
 
-      for (let cycle = 1; cycle <= config.totalCycles; cycle += 1) {
-        for (let round = 1; round <= config.totalRounds; round += 1) {
-          globalRound += 1;
-          const exerciseIndex = (globalRound - 1) % exercises.length;
+      function buildSchedule() {
+        const segments = [];
+        let globalRound = 0;
+        const exerciseCount = exercises.length;
+
+        if (config.prepareDuration > 0) {
           segments.push({
-            type: 'work',
-            duration: config.workDuration,
-            round,
-            cycle,
-            globalRound,
-            exerciseIndex
+            type: 'prepare',
+            duration: config.prepareDuration,
+            round: 0,
+            cycle: 0,
+            globalRound: 0,
+            exerciseIndex: exerciseCount > 0 ? 0 : -1
           });
+        }
 
-          const hasNextRoundInCycle = round < config.totalRounds;
-          if (hasNextRoundInCycle && config.restBetweenRounds > 0) {
-            const nextExerciseIndex = globalRound % exercises.length;
+        for (let cycle = 1; cycle <= config.totalCycles; cycle += 1) {
+          for (let round = 1; round <= config.totalRounds; round += 1) {
+            globalRound += 1;
+            const exerciseIndex = exerciseCount > 0 ? (globalRound - 1) % exerciseCount : -1;
             segments.push({
-              type: 'restRound',
-              duration: config.restBetweenRounds,
+              type: 'work',
+              duration: config.workDuration,
               round,
+              cycle,
+              globalRound,
+              exerciseIndex
+            });
+
+            const hasNextRoundInCycle = round < config.totalRounds;
+            if (hasNextRoundInCycle && config.restBetweenRounds > 0) {
+              const nextExerciseIndex = exerciseCount > 0 ? globalRound % exerciseCount : -1;
+              segments.push({
+                type: 'restRound',
+                duration: config.restBetweenRounds,
+                round,
+                cycle,
+                globalRound,
+                exerciseIndex: nextExerciseIndex
+              });
+            }
+          }
+
+          const hasNextCycle = cycle < config.totalCycles && config.restBetweenCycles > 0;
+          if (hasNextCycle) {
+            const nextExerciseIndex = exerciseCount > 0 ? globalRound % exerciseCount : -1;
+            segments.push({
+              type: 'restCycle',
+              duration: config.restBetweenCycles,
+              round: config.totalRounds,
               cycle,
               globalRound,
               exerciseIndex: nextExerciseIndex
@@ -1121,371 +1307,503 @@
           }
         }
 
-        const hasNextCycle = cycle < config.totalCycles && config.restBetweenCycles > 0;
-        if (hasNextCycle) {
-          const nextExerciseIndex = globalRound % exercises.length;
-          segments.push({
-            type: 'restCycle',
-            duration: config.restBetweenCycles,
-            round: config.totalRounds,
-            cycle,
-            globalRound,
-            exerciseIndex: nextExerciseIndex
-          });
+        state.schedule = segments;
+        state.totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
+      }
+
+      function setSegment(index, remaining) {
+        if (state.schedule.length === 0) return;
+        state.currentSegmentIndex = Math.max(0, Math.min(index, state.schedule.length - 1));
+        const segment = state.schedule[state.currentSegmentIndex];
+        state.segmentRemaining = remaining ?? segment.duration;
+        state.totalRemaining = state.segmentRemaining;
+        for (let i = state.currentSegmentIndex + 1; i < state.schedule.length; i += 1) {
+          state.totalRemaining += state.schedule[i].duration;
         }
-      }
-
-      state.schedule = segments;
-      state.totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
-    }
-
-    function setSegment(index, remaining) {
-      if (state.schedule.length === 0) return;
-      state.currentSegmentIndex = Math.max(0, Math.min(index, state.schedule.length - 1));
-      const segment = state.schedule[state.currentSegmentIndex];
-      state.segmentRemaining = remaining ?? segment.duration;
-      state.totalRemaining = state.segmentRemaining;
-      for (let i = state.currentSegmentIndex + 1; i < state.schedule.length; i += 1) {
-        state.totalRemaining += state.schedule[i].duration;
-      }
-      updateUI();
-    }
-
-    function resetState() {
-      buildSchedule();
-      state.isRunning = false;
-      state.isPaused = false;
-      state.lastTimestamp = null;
-      if (state.animationFrame) {
-        cancelAnimationFrame(state.animationFrame);
-        state.animationFrame = null;
-      }
-      if (state.schedule.length === 0) {
-        state.totalDuration = 0;
-        state.totalRemaining = 0;
-        state.segmentRemaining = 0;
-        state.currentSegmentIndex = 0;
         updateUI();
-        return;
-      }
-      setSegment(0, state.schedule[0].duration);
-    }
-
-    function updateProgressRing(element, progress) {
-      const clamped = Math.max(0, Math.min(progress, 1));
-      element.style.setProperty('--angle', `${clamped * 360}deg`);
-    }
-
-    function highlightExercise(index) {
-      elements.cards().forEach((card, cardIndex) => {
-        card.classList.toggle('active', cardIndex === index);
-      });
-    }
-
-    function updateUI() {
-      const segment = state.schedule[state.currentSegmentIndex];
-      const nextSegment = state.schedule[state.currentSegmentIndex + 1];
-      const totalRounds = Math.max(1, config.totalRounds);
-      const totalCycles = Math.max(1, config.totalCycles);
-
-      const resolvedRound = segment
-        ? (segment.round && segment.round > 0 ? Math.min(segment.round, totalRounds) : 1)
-        : totalRounds;
-      const resolvedCycle = segment
-        ? (segment.cycle && segment.cycle > 0 ? Math.min(segment.cycle, totalCycles) : 1)
-        : totalCycles;
-
-      updateProgressRing(elements.roundProgress, totalRounds ? resolvedRound / totalRounds : 0);
-      updateProgressRing(elements.cycleProgress, totalCycles ? resolvedCycle / totalCycles : 0);
-
-      elements.roundTracker.textContent = `${resolvedRound} / ${totalRounds}`;
-      elements.cycleTracker.textContent = `${resolvedCycle} / ${totalCycles}`;
-
-      const totalRemaining = state.totalRemaining;
-      elements.segmentCountdown.textContent = formatTime(totalRemaining);
-      elements.summaryLabel.textContent = `Round ${resolvedRound} · Cycle ${resolvedCycle} · ${formatTime(totalRemaining)} left`;
-
-      if (!segment) {
-        elements.timerRing.dataset.phase = 'complete';
-        elements.timerLabel.textContent = 'Complete';
-        elements.phaseIndicator.textContent = 'Workout complete';
-        elements.phaseTime.textContent = '00:00';
-        setActiveArcProgress(0, 1);
-        clearRoundArcs();
-        highlightExercise(-1);
-        elements.currentAction.textContent = 'Finished';
-        elements.currentExercise.textContent = 'Workout complete. Great effort!';
-        elements.nextAction.textContent = '—';
-        elements.nextExercise.textContent = 'Session complete';
-        return;
       }
 
-      const phaseMeta = {
-        prepare: { phase: 'prepare', label: 'Prepare' },
-        work: { phase: 'work', label: 'Work' },
-        restRound: { phase: 'rest', label: 'Rest' },
-        restCycle: { phase: 'cycleRest', label: 'Cycle Rest' }
-      }[segment.type] ?? { phase: 'prepare', label: 'Prepare' };
-
-      const paused = state.isPaused && state.isRunning;
-      elements.timerRing.dataset.phase = paused ? 'paused' : phaseMeta.phase;
-      elements.timerLabel.textContent = paused ? 'Paused' : phaseMeta.label;
-
-      const segmentDuration = segment.duration || 0;
-      elements.phaseTime.textContent = formatTime(state.segmentRemaining);
-      setActiveArcProgress(state.segmentRemaining, segmentDuration);
-
-      const isRoundPhase = segment.type === 'work' || segment.type === 'restRound';
-      if (isRoundPhase) {
-        const upcomingRest =
-          segment.type === 'work'
-            ? (segment.round < config.totalRounds ? config.restBetweenRounds : 0)
-            : segment.duration;
-        updateRoundArcs(config.workDuration, upcomingRest);
-      } else {
-        clearRoundArcs();
-      }
-
-      let currentExerciseText = '';
-      let highlightIndex = segment.exerciseIndex ?? -1;
-
-      if (segment.type === 'prepare') {
-        const firstWork = state.schedule.find((entry) => entry.type === 'work');
-        const firstExercise = firstWork ? exercises[firstWork.exerciseIndex] : null;
-        currentExerciseText = firstExercise ? `First up: ${firstExercise.name}` : 'Dial in your form.';
-        highlightIndex = firstWork ? firstWork.exerciseIndex : -1;
-      } else if (segment.type === 'work') {
-        const exercise = exercises[segment.exerciseIndex];
-        currentExerciseText = exercise ? `Go hard: ${exercise.name}` : 'Push through the circuit.';
-      } else if (segment.type === 'restRound') {
-        const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((entry) => entry.type === 'work');
-        const nextExercise = nextWork ? exercises[nextWork.exerciseIndex] : exercises[segment.exerciseIndex];
-        currentExerciseText = nextExercise ? `Recover before ${nextExercise.name}` : 'Take a quick breather.';
-        highlightIndex = nextWork ? nextWork.exerciseIndex : segment.exerciseIndex ?? -1;
-      } else if (segment.type === 'restCycle') {
-        const targetCycle = Math.min(segment.cycle + 1, config.totalCycles);
-        currentExerciseText = segment.cycle < config.totalCycles
-          ? `Reset for cycle ${targetCycle}`
-          : 'Cool down and celebrate.';
-        highlightIndex = -1;
-      } else {
-        currentExerciseText = 'Stay focused and breathe.';
-      }
-
-      if (paused) {
-        elements.phaseIndicator.textContent = 'Paused';
-        elements.currentAction.textContent = 'Paused';
-        elements.currentExercise.textContent = currentExerciseText;
-      } else {
-        elements.phaseIndicator.textContent = phaseMeta.label;
-        elements.currentAction.textContent = phaseMeta.label;
-        elements.currentExercise.textContent = currentExerciseText;
-      }
-
-      highlightExercise(highlightIndex);
-
-      if (nextSegment) {
-        const nextLabel = {
-          prepare: 'Prepare',
-          work: 'Work',
-          restRound: 'Rest',
-          restCycle: 'Cycle Rest'
-        }[nextSegment.type] ?? 'Prepare';
-        elements.nextAction.textContent = nextLabel;
-        if (nextSegment.type === 'work') {
-          const exercise = exercises[nextSegment.exerciseIndex];
-          elements.nextExercise.textContent = exercise ? exercise.name : 'Circuit';
-        } else if (nextSegment.type === 'restRound') {
-          elements.nextExercise.textContent = 'Recovery window';
-        } else if (nextSegment.type === 'restCycle') {
-          const targetCycle = Math.min(nextSegment.cycle + 1, config.totalCycles);
-          elements.nextExercise.textContent = nextSegment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down';
-        } else {
-          elements.nextExercise.textContent = 'Pre-start countdown';
+      function resetState() {
+        buildSchedule();
+        state.isRunning = false;
+        state.isPaused = false;
+        state.lastTimestamp = null;
+        if (state.animationFrame) {
+          cancelAnimationFrame(state.animationFrame);
+          state.animationFrame = null;
         }
-      } else {
-        elements.nextAction.textContent = 'Finish';
-        elements.nextExercise.textContent = 'Final push to complete.';
+        if (state.schedule.length === 0) {
+          state.totalDuration = 0;
+          state.totalRemaining = 0;
+          state.segmentRemaining = 0;
+          state.currentSegmentIndex = 0;
+          updateUI();
+          return;
+        }
+        setSegment(0, state.schedule[0].duration);
       }
 
-      const initialDuration = state.schedule[0]?.duration ?? 0;
-      const atBeginning =
-        state.currentSegmentIndex === 0 &&
-        Math.abs(state.segmentRemaining - initialDuration) < 0.5 &&
-        !state.isRunning;
-      const atEnd =
-        state.currentSegmentIndex >= state.schedule.length - 1 &&
-        !state.isRunning &&
-        state.totalRemaining < 0.5;
+      function getExerciseName(index) {
+        if (index == null || index < 0) return 'Circuit';
+        return exercises[index]?.name ?? 'Circuit';
+      }
 
-      controls.start.disabled = state.isRunning && !state.isPaused;
-      controls.pause.disabled = !state.isRunning;
-      controls.pause.textContent = state.isPaused ? 'Resume' : 'Pause';
-      controls.stop.disabled = atBeginning && !state.isRunning;
-      controls.reset.disabled = atBeginning && !state.isRunning;
-      controls.prev.disabled = state.schedule.length === 0 || findNextWork(state.currentSegmentIndex, -1) === state.currentSegmentIndex;
-      controls.next.disabled =
-        state.schedule.length === 0 ||
-        findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex ||
-        atEnd;
-    }
+      function updateUI() {
+        const segment = state.schedule[state.currentSegmentIndex];
+        const nextSegment = state.schedule[state.currentSegmentIndex + 1];
+        const totalRounds = Math.max(1, config.totalRounds);
+        const totalCycles = Math.max(1, config.totalCycles);
 
-    function advance(delta) {
-      let remainingDelta = delta;
-      while (remainingDelta > 0 && state.schedule[state.currentSegmentIndex]) {
-        if (state.segmentRemaining > remainingDelta) {
-          state.segmentRemaining -= remainingDelta;
-          state.totalRemaining = Math.max(0, state.totalRemaining - remainingDelta);
-          remainingDelta = 0;
+        const resolvedRound = segment && segment.round > 0 ? Math.min(segment.round, totalRounds) : 1;
+        const resolvedCycle = segment && segment.cycle > 0 ? Math.min(segment.cycle, totalCycles) : 1;
+
+        updateProgressRing(elements.roundProgress, totalRounds ? resolvedRound / totalRounds : 0);
+        updateProgressRing(elements.cycleProgress, totalCycles ? resolvedCycle / totalCycles : 0);
+
+        elements.roundTracker.textContent = `${resolvedRound} / ${totalRounds}`;
+        elements.cycleTracker.textContent = `${resolvedCycle} / ${totalCycles}`;
+
+        const totalRemaining = Math.max(0, state.totalRemaining);
+        elements.segmentCountdown.textContent = formatTime(totalRemaining);
+        elements.summaryLabel.textContent = `Round ${resolvedRound} · Cycle ${resolvedCycle} · ${formatTime(totalRemaining)} left`;
+
+        if (!segment) {
+          elements.timerRing.dataset.phase = 'complete';
+          elements.timerLabel.textContent = 'Complete';
+          elements.phaseIndicator.textContent = 'Workout complete';
+          elements.phaseTime.textContent = '00:00';
+          setActiveArcProgress(0, 1);
+          clearRoundArcs();
+          highlightExercise(-1);
+          elements.currentAction.textContent = 'Finished';
+          elements.currentExercise.textContent = 'Workout complete. Great effort!';
+          elements.nextAction.textContent = '—';
+          elements.nextExercise.textContent = 'Session complete';
+          return;
+        }
+
+        const phaseMeta = {
+          prepare: { phase: 'prepare', label: 'Prepare' },
+          work: { phase: 'work', label: 'Work' },
+          restRound: { phase: 'rest', label: 'Rest' },
+          restCycle: { phase: 'cycleRest', label: 'Cycle Rest' }
+        }[segment.type] ?? { phase: 'prepare', label: 'Prepare' };
+
+        const paused = state.isPaused && state.isRunning;
+        elements.timerRing.dataset.phase = paused ? 'paused' : phaseMeta.phase;
+        elements.timerLabel.textContent = paused ? 'Paused' : phaseMeta.label;
+
+        const segmentDuration = segment.duration || 0;
+        elements.phaseTime.textContent = formatTime(state.segmentRemaining);
+        setActiveArcProgress(state.segmentRemaining, segmentDuration);
+
+        const isRoundPhase = segment.type === 'work' || segment.type === 'restRound';
+        if (isRoundPhase) {
+          const upcomingRest =
+            segment.type === 'work'
+              ? (segment.round < config.totalRounds ? config.restBetweenRounds : 0)
+              : segment.duration;
+          updateRoundArcs(config.workDuration, upcomingRest);
         } else {
-          remainingDelta -= state.segmentRemaining;
-          state.totalRemaining = Math.max(0, state.totalRemaining - state.segmentRemaining);
-          const nextIndex = state.currentSegmentIndex + 1;
-          if (nextIndex >= state.schedule.length) {
-            state.segmentRemaining = 0;
-            state.currentSegmentIndex = nextIndex;
-            state.isRunning = false;
-            state.animationFrame && cancelAnimationFrame(state.animationFrame);
-            state.animationFrame = null;
-            break;
+          clearRoundArcs();
+        }
+
+        let currentExerciseText = '';
+        let highlightIndex = segment.exerciseIndex ?? -1;
+
+        if (segment.type === 'prepare') {
+          const firstWork = state.schedule.find((entry) => entry.type === 'work');
+          const firstName = firstWork ? getExerciseName(firstWork.exerciseIndex) : 'first exercise';
+          currentExerciseText = firstWork ? `First up: ${firstName}` : 'Dial in your form.';
+          highlightIndex = firstWork ? firstWork.exerciseIndex : -1;
+        } else if (segment.type === 'work') {
+          currentExerciseText = `Go hard: ${getExerciseName(highlightIndex)}`;
+        } else if (segment.type === 'restRound') {
+          const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((entry) => entry.type === 'work');
+          const nextName = nextWork ? getExerciseName(nextWork.exerciseIndex) : getExerciseName(segment.exerciseIndex);
+          currentExerciseText = nextWork ? `Recover before ${nextName}` : 'Take a quick breather.';
+          highlightIndex = nextWork ? nextWork.exerciseIndex : segment.exerciseIndex ?? -1;
+        } else if (segment.type === 'restCycle') {
+          const targetCycle = Math.min(segment.cycle + 1, config.totalCycles);
+          currentExerciseText = segment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down and celebrate.';
+          highlightIndex = -1;
+        } else {
+          currentExerciseText = 'Stay focused and breathe.';
+        }
+
+        if (paused) {
+          elements.phaseIndicator.textContent = 'Paused';
+          elements.currentAction.textContent = 'Paused';
+          elements.currentExercise.textContent = currentExerciseText;
+        } else {
+          elements.phaseIndicator.textContent = phaseMeta.label;
+          elements.currentAction.textContent = phaseMeta.label;
+          elements.currentExercise.textContent = currentExerciseText;
+        }
+
+        highlightExercise(highlightIndex);
+
+        if (nextSegment) {
+          const nextLabel = {
+            prepare: 'Prepare',
+            work: 'Work',
+            restRound: 'Rest',
+            restCycle: 'Cycle Rest'
+          }[nextSegment.type] ?? 'Prepare';
+          elements.nextAction.textContent = nextLabel;
+          if (nextSegment.type === 'work') {
+            elements.nextExercise.textContent = getExerciseName(nextSegment.exerciseIndex);
+          } else if (nextSegment.type === 'restRound') {
+            elements.nextExercise.textContent = 'Recovery window';
+          } else if (nextSegment.type === 'restCycle') {
+            const targetCycle = Math.min(nextSegment.cycle + 1, config.totalCycles);
+            elements.nextExercise.textContent = nextSegment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down';
+          } else {
+            elements.nextExercise.textContent = 'Pre-start countdown';
           }
-          state.currentSegmentIndex = nextIndex;
-          state.segmentRemaining = state.schedule[state.currentSegmentIndex].duration;
+        } else {
+          elements.nextAction.textContent = 'Finish';
+          elements.nextExercise.textContent = 'Final push to complete.';
+        }
+
+        const initialDuration = state.schedule[0]?.duration ?? 0;
+        const atBeginning =
+          state.currentSegmentIndex === 0 &&
+          Math.abs(state.segmentRemaining - initialDuration) < 0.5 &&
+          !state.isRunning;
+        const atEnd =
+          state.currentSegmentIndex >= state.schedule.length - 1 &&
+          !state.isRunning &&
+          state.totalRemaining < 0.5;
+
+        controls.start.disabled = state.isRunning && !state.isPaused;
+        controls.pause.disabled = !state.isRunning;
+        controls.pause.textContent = state.isPaused ? 'Resume' : 'Pause';
+        controls.stop.disabled = atBeginning && !state.isRunning;
+        controls.reset.disabled = atBeginning && !state.isRunning;
+        controls.prev.disabled =
+          state.schedule.length === 0 ||
+          findNextWork(state.currentSegmentIndex, -1) === state.currentSegmentIndex;
+        controls.next.disabled =
+          state.schedule.length === 0 ||
+          findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex ||
+          atEnd;
+      }
+
+      function advance(delta) {
+        let remainingDelta = delta;
+        while (remainingDelta > 0 && state.schedule[state.currentSegmentIndex]) {
+          if (state.segmentRemaining > remainingDelta) {
+            state.segmentRemaining -= remainingDelta;
+            state.totalRemaining = Math.max(0, state.totalRemaining - remainingDelta);
+            remainingDelta = 0;
+          } else {
+            remainingDelta -= state.segmentRemaining;
+            state.totalRemaining = Math.max(0, state.totalRemaining - state.segmentRemaining);
+            const nextIndex = state.currentSegmentIndex + 1;
+            if (nextIndex >= state.schedule.length) {
+              state.segmentRemaining = 0;
+              state.currentSegmentIndex = nextIndex;
+              state.isRunning = false;
+              if (state.animationFrame) {
+                cancelAnimationFrame(state.animationFrame);
+                state.animationFrame = null;
+              }
+              break;
+            }
+            state.currentSegmentIndex = nextIndex;
+            state.segmentRemaining = state.schedule[state.currentSegmentIndex].duration;
+          }
+        }
+        updateUI();
+      }
+
+      function tick(timestamp) {
+        if (!state.isRunning || state.isPaused) return;
+        if (state.lastTimestamp == null) {
+          state.lastTimestamp = timestamp;
+        }
+        const delta = (timestamp - state.lastTimestamp) / 1000;
+        state.lastTimestamp = timestamp;
+        advance(delta);
+        if (state.isRunning && !state.isPaused) {
+          state.animationFrame = requestAnimationFrame(tick);
         }
       }
-      updateUI();
-    }
 
-    function tick(timestamp) {
-      if (!state.isRunning || state.isPaused) return;
-      if (state.lastTimestamp == null) {
-        state.lastTimestamp = timestamp;
+      function startTimer() {
+        if (state.schedule.length === 0 || state.currentSegmentIndex >= state.schedule.length) {
+          resetState();
+        }
+        if (!state.isRunning) {
+          state.isRunning = true;
+          state.isPaused = false;
+          state.lastTimestamp = null;
+          state.animationFrame = requestAnimationFrame(tick);
+        } else if (state.isPaused) {
+          state.isPaused = false;
+          state.lastTimestamp = null;
+          state.animationFrame = requestAnimationFrame(tick);
+        }
+        updateUI();
       }
-      const delta = (timestamp - state.lastTimestamp) / 1000;
-      state.lastTimestamp = timestamp;
-      advance(delta);
-      if (state.isRunning && !state.isPaused) {
-        state.animationFrame = requestAnimationFrame(tick);
-      }
-    }
 
-    function startTimer() {
-      if (state.schedule.length === 0 || state.currentSegmentIndex >= state.schedule.length) {
+      function pauseTimer() {
+        if (!state.isRunning) return;
+        state.isPaused = !state.isPaused;
+        if (!state.isPaused) {
+          state.lastTimestamp = null;
+          state.animationFrame = requestAnimationFrame(tick);
+        }
+        updateUI();
+      }
+
+      function stopTimer() {
+        state.isRunning = false;
+        state.isPaused = false;
+        if (state.animationFrame) {
+          cancelAnimationFrame(state.animationFrame);
+          state.animationFrame = null;
+        }
         resetState();
       }
-      if (!state.isRunning) {
-        state.isRunning = true;
+
+      function resetTimer() {
+        if (state.animationFrame) {
+          cancelAnimationFrame(state.animationFrame);
+          state.animationFrame = null;
+        }
+        state.isRunning = false;
         state.isPaused = false;
-        state.lastTimestamp = null;
-        state.animationFrame = requestAnimationFrame(tick);
-      } else if (state.isPaused) {
-        state.isPaused = false;
-        state.lastTimestamp = null;
-        state.animationFrame = requestAnimationFrame(tick);
+        setSegment(0, state.schedule[0]?.duration ?? 0);
+        updateUI();
       }
-      updateUI();
-    }
 
-    function pauseTimer() {
-      if (!state.isRunning) return;
-      state.isPaused = !state.isPaused;
-      if (!state.isPaused) {
-        state.lastTimestamp = null;
-        state.animationFrame = requestAnimationFrame(tick);
-      }
-      updateUI();
-    }
-
-    function stopTimer() {
-      state.isRunning = false;
-      state.isPaused = false;
-      if (state.animationFrame) {
-        cancelAnimationFrame(state.animationFrame);
-        state.animationFrame = null;
-      }
-      resetState();
-    }
-
-    function resetTimer() {
-      if (state.animationFrame) {
-        cancelAnimationFrame(state.animationFrame);
-        state.animationFrame = null;
-      }
-      state.isRunning = false;
-      state.isPaused = false;
-      setSegment(0, state.schedule[0]?.duration ?? 0);
-      updateUI();
-    }
-
-    function findNextWork(fromIndex, direction) {
-      if (state.schedule.length === 0) return fromIndex;
-      if (direction > 0) {
-        for (let i = fromIndex + 1; i < state.schedule.length; i += 1) {
+      function findNextWork(fromIndex, direction) {
+        if (state.schedule.length === 0) return fromIndex;
+        if (direction > 0) {
+          for (let i = fromIndex + 1; i < state.schedule.length; i += 1) {
+            if (state.schedule[i].type === 'work') return i;
+          }
+          return state.schedule.length - 1;
+        }
+        for (let i = fromIndex - 1; i >= 0; i -= 1) {
           if (state.schedule[i].type === 'work') return i;
         }
-        return state.schedule.length - 1;
+        return 0;
       }
-      for (let i = fromIndex - 1; i >= 0; i -= 1) {
-        if (state.schedule[i].type === 'work') return i;
+
+      function skip(direction) {
+        if (state.schedule.length === 0) return;
+        const nextWorkIndex = findNextWork(state.currentSegmentIndex, direction);
+        if (nextWorkIndex === state.currentSegmentIndex) {
+          return;
+        }
+        state.currentSegmentIndex = nextWorkIndex;
+        state.segmentRemaining = state.schedule[nextWorkIndex].duration;
+        state.totalRemaining = state.segmentRemaining;
+        for (let i = nextWorkIndex + 1; i < state.schedule.length; i += 1) {
+          state.totalRemaining += state.schedule[i].duration;
+        }
+        state.lastTimestamp = null;
+        updateUI();
       }
-      return 0;
-    }
 
-    function skip(direction) {
-      if (state.schedule.length === 0) return;
-      const nextWorkIndex = findNextWork(state.currentSegmentIndex, direction);
-      if (nextWorkIndex === state.currentSegmentIndex) {
-        return;
+      controls.start.addEventListener('click', startTimer);
+      controls.pause.addEventListener('click', pauseTimer);
+      controls.stop.addEventListener('click', stopTimer);
+      controls.reset.addEventListener('click', resetTimer);
+      controls.next.addEventListener('click', () => skip(1));
+      controls.prev.addEventListener('click', () => skip(-1));
+
+      openConfigBtn.addEventListener('click', () => {
+        configPanel.dataset.open = 'true';
+      });
+
+      closeConfigBtn.addEventListener('click', () => {
+        configPanel.dataset.open = 'false';
+      });
+
+      applyDefaultsBtn.addEventListener('click', () => {
+        if (!activeDefaults) return;
+        setFormValuesFromSettings(activeDefaults);
+        updateConfigFromForm();
+      });
+
+      function setFormValuesFromSettings(settings) {
+        form.prepareDuration.value = settings.prepareDuration;
+        form.rounds.value = settings.totalRounds;
+        form.cycles.value = settings.totalCycles;
+        form.workDuration.value = settings.workDuration;
+        form.restRounds.value = settings.restBetweenRounds;
+        form.restCycles.value = settings.restBetweenCycles;
       }
-      state.currentSegmentIndex = nextWorkIndex;
-      state.segmentRemaining = state.schedule[nextWorkIndex].duration;
-      state.totalRemaining = state.segmentRemaining;
-      for (let i = nextWorkIndex + 1; i < state.schedule.length; i += 1) {
-        state.totalRemaining += state.schedule[i].duration;
+
+      function syncFormFromConfig() {
+        setFormValuesFromSettings(config);
       }
-      state.lastTimestamp = null;
-      updateUI();
-    }
 
-    controls.start.addEventListener('click', startTimer);
-    controls.pause.addEventListener('click', pauseTimer);
-    controls.stop.addEventListener('click', stopTimer);
-    controls.reset.addEventListener('click', resetTimer);
-    controls.next.addEventListener('click', () => skip(1));
-    controls.prev.addEventListener('click', () => skip(-1));
+      function applySettingsToConfig(settings) {
+        const clean = sanitizeSettings(settings);
+        Object.assign(config, clean);
+        return clean;
+      }
 
-    openConfigBtn.addEventListener('click', () => {
-      configPanel.dataset.open = 'true';
-    });
+      function updateConfigFromForm() {
+        const nextSettings = {
+          prepareDuration: form.prepareDuration.value,
+          totalRounds: form.rounds.value,
+          totalCycles: form.cycles.value,
+          workDuration: form.workDuration.value,
+          restBetweenRounds: form.restRounds.value,
+          restBetweenCycles: form.restCycles.value
+        };
+        applySettingsToConfig(nextSettings);
+        if (isAppReady) {
+          resetState();
+          setWorkoutInUrl(activeWorkout?.slug);
+        }
+      }
 
-    closeConfigBtn.addEventListener('click', () => {
-      configPanel.dataset.open = 'false';
-    });
+      form.addEventListener('input', updateConfigFromForm);
 
-    applyDefaultsBtn.addEventListener('click', () => {
-      form.prepareDuration.value = 10;
-      form.rounds.value = 6;
-      form.cycles.value = 4;
-      form.workDuration.value = 60;
-      form.restRounds.value = 10;
-      form.restCycles.value = 60;
-      updateConfigFromForm();
-    });
+      function normalizeWorkouts(rawList) {
+        if (!Array.isArray(rawList)) return [];
+        return rawList
+          .map((item) => {
+            if (!item || !item.slug) return null;
+            const slug = String(item.slug).toLowerCase();
+            const settings = sanitizeSettings(item.settings || {});
+            return {
+              slug,
+              title: item.title || slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+              tagline: item.tagline || '',
+              exercisesHeading: item.exercisesHeading || 'Exercise Circuit',
+              summary: item.summary || '',
+              settings,
+              exercises: Array.isArray(item.exercises) ? item.exercises : []
+            };
+          })
+          .filter(Boolean);
+      }
 
-    function updateConfigFromForm() {
-      config.prepareDuration = Math.max(0, Number(form.prepareDuration.value) || 0);
-      config.totalRounds = Math.max(1, Number(form.rounds.value) || 1);
-      config.totalCycles = Math.max(1, Number(form.cycles.value) || 1);
-      config.workDuration = Math.max(5, Number(form.workDuration.value) || 5);
-      config.restBetweenRounds = Math.max(0, Number(form.restRounds.value) || 0);
-      config.restBetweenCycles = Math.max(0, Number(form.restCycles.value) || 0);
-      resetState();
-    }
+      async function loadWorkouts() {
+        try {
+          const response = await fetch(workoutsEndpoint, { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(`Failed to load workouts: ${response.status}`);
+          }
+          const payload = await response.json();
+          const list = Array.isArray(payload) ? payload : Array.isArray(payload.workouts) ? payload.workouts : [];
+          const normalized = normalizeWorkouts(list);
+          if (normalized.length > 0) {
+            workouts = normalized;
+            return;
+          }
+        } catch (error) {
+          console.warn('Falling back to bundled workouts.', error);
+        }
+        workouts = normalizeWorkouts(fallbackWorkouts);
+      }
 
-    form.addEventListener('input', updateConfigFromForm);
+      function populateWorkoutSelect() {
+        workoutSelect.innerHTML = '';
+        workouts.forEach((workout) => {
+          const option = document.createElement('option');
+          option.value = workout.slug;
+          option.textContent = workout.title;
+          workoutSelect.appendChild(option);
+        });
+      }
 
-    resetState();
-    updateUI();
+      workoutSelect.addEventListener('change', (event) => {
+        const slug = event.target.value;
+        const workout = workouts.find((candidate) => candidate.slug === slug);
+        if (workout) {
+          selectWorkout(workout);
+        }
+      });
+
+      function setWorkoutInUrl(slug) {
+        if (!slug) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('workout', slug);
+        const query = url.searchParams.toString();
+        const newUrl = `${url.pathname}${query ? `?${query}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+
+      function getWorkoutSlugFromUrl() {
+        const url = new URL(window.location.href);
+        const slugFromQuery = url.searchParams.get('workout');
+        if (slugFromQuery) return slugFromQuery.toLowerCase();
+        const hash = url.hash.replace(/^#/, '');
+        return hash ? hash.toLowerCase() : null;
+      }
+
+      function updateBranding(workout) {
+        if (elements.workoutTitle) {
+          elements.workoutTitle.textContent = workout.title;
+        }
+        if (elements.workoutTagline) {
+          elements.workoutTagline.textContent = workout.tagline || '';
+        }
+        if (elements.exercisesHeading) {
+          elements.exercisesHeading.textContent = workout.exercisesHeading || 'Exercise Circuit';
+        }
+        document.title = workout.title;
+      }
+
+      function selectWorkout(workout) {
+        if (!workout) return;
+        if (state.animationFrame) {
+          cancelAnimationFrame(state.animationFrame);
+          state.animationFrame = null;
+        }
+        state.isRunning = false;
+        state.isPaused = false;
+        isAppReady = false;
+
+        activeWorkout = workout;
+        activeDefaults = cloneSettings(workout.settings);
+        exercises = Array.isArray(workout.exercises) ? workout.exercises.slice() : [];
+        applySettingsToConfig(activeDefaults);
+        syncFormFromConfig();
+        renderExerciseCards();
+        updateBranding(workout);
+        workoutSelect.value = workout.slug;
+        resetState();
+        highlightExercise(-1);
+        setWorkoutInUrl(workout.slug);
+        isAppReady = true;
+      }
+
+      function pickInitialWorkout() {
+        const slug = getWorkoutSlugFromUrl();
+        if (slug) {
+          const match = workouts.find((workout) => workout.slug === slug);
+          if (match) {
+            return match;
+          }
+        }
+        return workouts[0] ?? null;
+      }
+
+      async function initialize() {
+        await loadWorkouts();
+        populateWorkoutSelect();
+        const initialWorkout = pickInitialWorkout();
+        if (initialWorkout) {
+          selectWorkout(initialWorkout);
+        } else {
+          renderExerciseCards();
+          resetState();
+        }
+      }
+
+      initialize();
+    })();
   </script>
+
 </body>
 </html>
