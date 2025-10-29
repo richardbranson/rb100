@@ -16,6 +16,12 @@
       --accent: #4f7bff;
       --accent-soft: rgba(79, 123, 255, 0.22);
       --success: #4fd1c5;
+      --phase-prepare: #f6c65c;
+      --phase-work: #32d27c;
+      --phase-rest: #ff6b6b;
+      --phase-cycle: #7f93ff;
+      --phase-paused: #f6c65c;
+      --phase-track: rgba(255, 255, 255, 0.12);
       font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
 
@@ -130,17 +136,14 @@
     }
 
     .timer-progress {
-      --angle: 0deg;
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      background:
-        radial-gradient(circle at center, rgba(12, 18, 34, 0.92) 0 58%, transparent 58%),
-        conic-gradient(var(--accent) var(--angle), rgba(255, 255, 255, 0.08) var(--angle));
       display: grid;
       place-items: center;
       padding: clamp(18px, 2vw, 30px);
-      transition: background 180ms ease;
+      transition: filter 180ms ease;
+      pointer-events: none;
     }
 
     .timer-progress::after {
@@ -150,6 +153,71 @@
       border-radius: 50%;
       border: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(5, 10, 20, 0.85);
+    }
+
+    .timer-svg {
+      position: absolute;
+      inset: clamp(18px, 2vw, 30px);
+      width: auto;
+      height: auto;
+      overflow: visible;
+    }
+
+    .timer-svg circle {
+      fill: none;
+      stroke-linecap: round;
+      stroke-width: clamp(12px, 1.6vw, 18px);
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    .timer-track {
+      stroke: rgba(255, 255, 255, 0.08);
+    }
+
+    .timer-arc {
+      stroke-dasharray: 0 999;
+      stroke-dashoffset: 0;
+      opacity: 0;
+      transition: opacity 200ms ease, stroke 160ms ease, stroke-dashoffset 120ms linear;
+    }
+
+    .timer-arc--work {
+      stroke: var(--phase-work);
+    }
+
+    .timer-arc--rest {
+      stroke: var(--phase-rest);
+    }
+
+    .timer-arc--active {
+      stroke: var(--accent);
+      opacity: 1;
+    }
+
+    .timer-ring[data-phase="prepare"] .timer-arc--active {
+      stroke: var(--phase-prepare);
+    }
+
+    .timer-ring[data-phase="paused"] .timer-arc--active {
+      stroke: var(--phase-paused);
+    }
+
+    .timer-ring[data-phase="cycleRest"] .timer-arc--active {
+      stroke: var(--phase-cycle);
+    }
+
+    .timer-ring[data-phase="rest"] .timer-arc--active {
+      stroke: var(--phase-rest);
+    }
+
+    .timer-ring[data-phase="work"] .timer-arc--active {
+      stroke: var(--phase-work);
+    }
+
+    .timer-ring[data-round="true"] .timer-arc--work,
+    .timer-ring[data-round="true"] .timer-arc--rest {
+      opacity: 1;
     }
 
     .timer-inner {
@@ -252,6 +320,16 @@
       letter-spacing: 0.18em;
     }
 
+    .segment-card .countdown::before {
+      content: 'Total Remaining';
+      display: block;
+      font-size: clamp(0.7rem, 0.95vw, 0.85rem);
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
     .exercise-section {
       display: grid;
       gap: clamp(14px, 2vh, 24px);
@@ -286,13 +364,35 @@
       transform: translateY(-4px);
     }
 
-    .video-placeholder {
+    .video-wrapper {
       width: 100%;
       aspect-ratio: 16 / 9;
       border-radius: 14px;
+      overflow: hidden;
       background:
         radial-gradient(circle at 30% 30%, rgba(79, 123, 255, 0.45), rgba(79, 123, 255, 0.12)),
         rgba(12, 22, 44, 0.85);
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .video-wrapper iframe,
+    .video-wrapper video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border: 0;
+    }
+
+    .video-wrapper video {
+      object-fit: cover;
+      background: #000;
+    }
+
+    .video-placeholder {
+      width: 100%;
+      height: 100%;
       display: grid;
       place-items: center;
       font-size: clamp(0.75rem, 0.9vw, 0.95rem);
@@ -524,12 +624,18 @@
     <main>
       <section class="timer-section">
         <div class="main-timer">
-          <div class="timer-ring">
+          <div class="timer-ring" id="timerRing" data-phase="prepare">
+            <svg class="timer-svg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="timer-track" cx="60" cy="60" r="54" />
+              <circle class="timer-arc timer-arc--rest" cx="60" cy="60" r="54" id="restArc" />
+              <circle class="timer-arc timer-arc--work" cx="60" cy="60" r="54" id="workArc" />
+              <circle class="timer-arc timer-arc--active" cx="60" cy="60" r="54" id="activeArc" />
+            </svg>
             <div class="timer-progress" id="totalProgress">
               <div class="timer-inner">
-                <div class="timer-label">Total Remaining</div>
-                <div class="timer-value" id="totalTimeDisplay">30:00</div>
-                <div class="phase-indicator" id="phaseIndicator">Ready</div>
+                <div class="timer-label" id="timerLabel">Prepare</div>
+                <div class="timer-value" id="segmentTimeDisplay">00:10</div>
+                <div class="phase-indicator" id="phaseIndicator">Get ready</div>
               </div>
             </div>
           </div>
@@ -537,13 +643,13 @@
             <div class="mini-progress" id="roundProgress">
               <div class="timer-inner">
                 <span>Round</span>
-                <strong id="roundTracker">1 / 3</strong>
+                <strong id="roundTracker">1 / 6</strong>
               </div>
             </div>
             <div class="mini-progress" id="cycleProgress">
               <div class="timer-inner">
                 <span>Cycle</span>
-                <strong id="cycleTracker">1 / 6</strong>
+                <strong id="cycleTracker">1 / 4</strong>
               </div>
             </div>
           </div>
@@ -551,14 +657,14 @@
         <div class="segment-summary">
           <div class="segment-card">
             <span>Now</span>
-            <strong id="currentAction">Work</strong>
-            <p id="currentExercise">Hold steady and get ready.</p>
-            <div class="countdown" id="segmentCountdown">01:00</div>
+            <strong id="currentAction">Prepare</strong>
+            <p id="currentExercise">Dial in your form.</p>
+            <div class="countdown" id="segmentCountdown">30:30</div>
           </div>
           <div class="segment-card">
             <span>Next</span>
-            <strong id="nextAction">Rest</strong>
-            <p id="nextExercise">Your recovery window.</p>
+            <strong id="nextAction">Work</strong>
+            <p id="nextExercise">Kettlebell Swing is up first.</p>
           </div>
         </div>
       </section>
@@ -580,7 +686,7 @@
       </div>
       <div class="session-summary">
         <span>Session Progress</span>
-        <strong id="summaryLabel">Round 1 · Cycle 1</strong>
+        <strong id="summaryLabel">Round 1 · Cycle 1 · 30:30 left</strong>
       </div>
     </footer>
 
@@ -590,12 +696,16 @@
       </header>
       <form id="configForm">
         <div class="field">
+          <label for="prepareDuration">Prepare (seconds)</label>
+          <input type="number" id="prepareDuration" name="prepareDuration" min="0" value="10" />
+        </div>
+        <div class="field">
           <label for="rounds">Rounds</label>
-          <input type="number" id="rounds" name="rounds" min="1" value="3" />
+          <input type="number" id="rounds" name="rounds" min="1" value="6" />
         </div>
         <div class="field">
           <label for="cycles">Cycles</label>
-          <input type="number" id="cycles" name="cycles" min="1" value="6" />
+          <input type="number" id="cycles" name="cycles" min="1" value="4" />
         </div>
         <div class="field">
           <label for="workDuration">Work (seconds)</label>
@@ -607,7 +717,7 @@
         </div>
         <div class="field">
           <label for="restCycles">Rest Between Cycles (seconds)</label>
-          <input type="number" id="restCycles" name="restCycles" min="0" value="110" />
+          <input type="number" id="restCycles" name="restCycles" min="0" value="60" />
         </div>
       </form>
       <div class="config-actions">
@@ -619,33 +729,206 @@
 
   <script>
     const exercises = [
+      // {
+      //   name: 'Kettlebell Swing',
+      //   description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.',
+      //   video: 'media/burpee_standard_v1.mp4'
+      // },
       {
         name: 'Kettlebell Swing',
-        description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.'
+        description: 'Explosive hip hinge to power the bell overhead and ignite the posterior chain.',
+        video: {
+          type: 'youtube',
+          url: 'https://www.youtube.com/watch?v=mKDIuUbH94Q',
+          title: ''
+        }
       },
       {
         name: 'Push-Up to T Rotation',
-        description: 'Alternate a side plank reach between each rep to build rotational stability.'
+        description: 'Alternate a side plank reach between each rep to build rotational stability.',
+        video: {
+          type: 'youtube',
+          url: 'https://www.youtube.com/watch?v=dSDoVEV2298',
+          title: 'Push-Up to T Rotation demo'
+        }
       },
       {
         name: 'Reverse Lunge & Press',
-        description: 'Step back, drop the knee, and drive overhead with the opposite arm on return.'
+        description: 'Step back, drop the knee, and drive overhead with the opposite arm on return.',
+        video: {
+          type: 'youtube',
+          url: 'https://www.youtube.com/watch?v=ZPoMxOrIeO4',
+          title: ''
+        }
       },
       {
         name: 'Renegade Row',
-        description: 'Brace through the core, row the bell, and resist trunk rotation under load.'
+        description: 'Brace through the core, row the bell, and resist trunk rotation under load.',
+        video: {
+          type: 'youtube',
+          url: 'https://www.youtube.com/watch?v=LccyTxiUrhg',
+          title: ''
+        }
       },
       {
         name: 'V-Up Reach',
-        description: 'Snap to a V-sit while touching toes and controlling the eccentric descent.'
+        description: 'Snap to a V-sit while touching toes and controlling the eccentric descent.',
+        video: {
+          type: 'youtube',
+          url: 'https://www.youtube.com/watch?v=7UVgs18Y1P4',
+          title: ''
+        }
       },
       {
         name: 'Squat Thruster',
-        description: 'Sink deep into a squat and explode into a powerful overhead drive.'
+        description: 'Sink deep into a squat and explode into a powerful overhead drive.',
+        video: {
+          type: 'youtube',
+          url: 'https://www.youtube.com/watch?v=L219ltL15zk',
+          title: ''
+        }
       }
     ];
 
     const exerciseGrid = document.getElementById('exerciseGrid');
+
+    function extractYouTubeId(raw) {
+      if (!raw) return null;
+      if (/^[\w-]{11}$/.test(raw)) {
+        return raw;
+      }
+      try {
+        const url = new URL(raw, window.location.href);
+        const host = url.hostname.replace(/^www\./, '');
+        if (host === 'youtu.be') {
+          return url.pathname.slice(1).split('/')[0] || null;
+        }
+        if (host === 'youtube.com' || host === 'music.youtube.com') {
+          if (url.searchParams.has('v')) {
+            return url.searchParams.get('v');
+          }
+          const parts = url.pathname.split('/').filter(Boolean);
+          const embedIndex = parts.indexOf('embed');
+          if (embedIndex !== -1 && parts[embedIndex + 1]) {
+            return parts[embedIndex + 1];
+          }
+          if (parts[0] === 'shorts' && parts[1]) {
+            return parts[1];
+          }
+        }
+      } catch (error) {
+        return null;
+      }
+      return null;
+    }
+
+    function resolveVideoConfig(video) {
+      if (!video) return null;
+      if (typeof video === 'string') {
+        const youtubeId = extractYouTubeId(video);
+        if (youtubeId) {
+          return {
+            kind: 'youtube',
+            src: `https://www.youtube.com/embed/${youtubeId}`,
+            videoId: youtubeId
+          };
+        }
+        return {
+          kind: 'file',
+          src: video
+        };
+      }
+      if (typeof video === 'object') {
+        if (video.type === 'youtube') {
+          const explicitEmbed = video.embed ?? video.src;
+          const youtubeId = video.id ?? extractYouTubeId(video.url ?? explicitEmbed);
+          const src = explicitEmbed ?? (youtubeId ? `https://www.youtube.com/embed/${youtubeId}` : null);
+          if (src) {
+            return {
+              kind: 'youtube',
+              src,
+              title: video.title ?? '',
+              videoId: youtubeId ?? null
+            };
+          }
+        }
+        const src = video.src ?? video.url;
+        if (src) {
+          return {
+            kind: 'file',
+            src,
+            title: video.title ?? ''
+          };
+        }
+      }
+      return null;
+    }
+
+    function withYouTubeLoop(src, videoId) {
+      try {
+        const url = new URL(src, window.location.href);
+        url.searchParams.set('loop', '1');
+        url.searchParams.set('autoplay', '1');
+        url.searchParams.set('mute', '1');
+        url.searchParams.set('playsinline', '1');
+        const id = videoId || url.pathname.split('/').filter(Boolean).pop();
+        if (id) {
+          url.searchParams.set('playlist', id);
+        }
+        return url.toString();
+      } catch (error) {
+        const params = new URLSearchParams();
+        params.set('loop', '1');
+        params.set('autoplay', '1');
+        params.set('mute', '1');
+        params.set('playsinline', '1');
+        if (videoId) {
+          params.set('playlist', videoId);
+        }
+        const separator = src.includes('?') ? '&' : '?';
+        return `${src}${separator}${params.toString()}`;
+      }
+    }
+
+    function createVideoWrapper(videoConfig, index) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'video-wrapper';
+      const resolved = resolveVideoConfig(videoConfig);
+      if (resolved?.kind === 'youtube') {
+        const iframe = document.createElement('iframe');
+        iframe.src = withYouTubeLoop(resolved.src, resolved.videoId ?? null);
+        iframe.title = resolved.title || `Exercise video ${index + 1}`;
+        iframe.loading = 'lazy';
+        iframe.allow =
+          'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+        iframe.allowFullscreen = true;
+        wrapper.appendChild(iframe);
+        return wrapper;
+      }
+      if (resolved?.kind === 'file') {
+        const video = document.createElement('video');
+        video.src = resolved.src;
+        video.controls = true;
+        video.preload = 'metadata';
+        video.autoplay = true;
+        video.muted = true;
+        video.defaultMuted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.setAttribute('muted', '');
+        video.setAttribute('autoplay', '');
+        video.setAttribute('playsinline', '');
+        video.title = resolved.title || `Exercise video ${index + 1}`;
+        wrapper.appendChild(video);
+        return wrapper;
+      }
+      const placeholder = document.createElement('div');
+      placeholder.className = 'video-placeholder';
+      placeholder.textContent = `Video ${index + 1}`;
+      wrapper.appendChild(placeholder);
+      return wrapper;
+    }
 
     function renderExerciseCards() {
       exerciseGrid.innerHTML = '';
@@ -653,13 +936,16 @@
         const card = document.createElement('article');
         card.className = 'exercise-card';
         card.dataset.index = index;
-        card.innerHTML = `
-          <div class="video-placeholder">Video ${index + 1}</div>
-          <div>
-            <h3>${exercise.name}</h3>
-            <p>${exercise.description}</p>
-          </div>
-        `;
+        const videoWrapper = createVideoWrapper(exercise.video, index);
+        const textWrapper = document.createElement('div');
+        const heading = document.createElement('h3');
+        heading.textContent = exercise.name;
+        const description = document.createElement('p');
+        description.textContent = exercise.description;
+        textWrapper.appendChild(heading);
+        textWrapper.appendChild(description);
+        card.appendChild(videoWrapper);
+        card.appendChild(textWrapper);
         exerciseGrid.appendChild(card);
       });
     }
@@ -667,11 +953,12 @@
     renderExerciseCards();
 
     const config = {
-      totalRounds: 3,
-      totalCycles: 6,
+      prepareDuration: 10,
+      totalRounds: 6,
+      totalCycles: 4,
       workDuration: 60,
       restBetweenRounds: 10,
-      restBetweenCycles: 110
+      restBetweenCycles: 60
     };
 
     const state = {
@@ -687,9 +974,10 @@
     };
 
     const elements = {
-      totalTimeDisplay: document.getElementById('totalTimeDisplay'),
+      timerRing: document.getElementById('timerRing'),
+      timerLabel: document.getElementById('timerLabel'),
       phaseIndicator: document.getElementById('phaseIndicator'),
-      totalProgress: document.getElementById('totalProgress'),
+      phaseTime: document.getElementById('segmentTimeDisplay'),
       roundProgress: document.getElementById('roundProgress'),
       cycleProgress: document.getElementById('cycleProgress'),
       roundTracker: document.getElementById('roundTracker'),
@@ -702,6 +990,65 @@
       summaryLabel: document.getElementById('summaryLabel'),
       cards: () => Array.from(document.querySelectorAll('.exercise-card'))
     };
+
+    const arcs = {
+      work: document.getElementById('workArc'),
+      rest: document.getElementById('restArc'),
+      active: document.getElementById('activeArc')
+    };
+
+    const ARC_RADIUS = 54;
+    const ARC_CIRCUMFERENCE = 2 * Math.PI * ARC_RADIUS;
+
+    if (arcs.active) {
+      arcs.active.style.strokeDasharray = `${ARC_CIRCUMFERENCE} ${ARC_CIRCUMFERENCE}`;
+      arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
+    }
+
+    function setActiveArcProgress(remaining, total) {
+      if (!arcs.active) return;
+      if (!total || total <= 0) {
+        arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE;
+        return;
+      }
+      const remainingFraction = Math.max(0, Math.min(remaining / total, 1));
+      arcs.active.style.strokeDashoffset = ARC_CIRCUMFERENCE * (1 - remainingFraction);
+    }
+
+    function updateRoundArcs(workDuration, restDuration) {
+      if (!arcs.work || !arcs.rest) return;
+      const safeWork = Math.max(0, workDuration);
+      const safeRest = Math.max(0, restDuration);
+      const roundTotal = safeWork + safeRest;
+      if (roundTotal <= 0) {
+        arcs.work.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
+        arcs.rest.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
+        arcs.rest.style.strokeDashoffset = 0;
+        arcs.work.style.strokeDashoffset = 0;
+        elements.timerRing.dataset.round = 'false';
+        return;
+      }
+      const workRatio = Math.min(1, safeWork / roundTotal);
+      const restRatio = Math.min(1, safeRest / roundTotal);
+      const workLength = ARC_CIRCUMFERENCE * workRatio;
+      const restLength = ARC_CIRCUMFERENCE * restRatio;
+      arcs.work.style.strokeDasharray = `${workLength} ${ARC_CIRCUMFERENCE}`;
+      arcs.work.style.strokeDashoffset = 0;
+      arcs.work.style.opacity = workLength > 0 ? 1 : 0;
+      arcs.rest.style.strokeDasharray = `${restLength} ${ARC_CIRCUMFERENCE}`;
+      arcs.rest.style.strokeDashoffset = -workLength;
+      arcs.rest.style.opacity = restLength > 0 ? 1 : 0;
+      elements.timerRing.dataset.round = 'true';
+    }
+
+    function clearRoundArcs() {
+      if (!arcs.work || !arcs.rest) return;
+      elements.timerRing.dataset.round = 'false';
+      arcs.work.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
+      arcs.rest.style.strokeDasharray = `0 ${ARC_CIRCUMFERENCE}`;
+      arcs.rest.style.strokeDashoffset = 0;
+      arcs.work.style.strokeDashoffset = 0;
+    }
 
     const controls = {
       start: document.getElementById('startWorkout'),
@@ -734,35 +1081,60 @@
 
     function buildSchedule() {
       const segments = [];
-      for (let round = 1; round <= config.totalRounds; round += 1) {
-        for (let cycle = 1; cycle <= config.totalCycles; cycle += 1) {
+      let globalRound = 0;
+
+      if (config.prepareDuration > 0) {
+        segments.push({
+          type: 'prepare',
+          duration: config.prepareDuration,
+          round: 0,
+          cycle: 0,
+          globalRound: 0,
+          exerciseIndex: 0
+        });
+      }
+
+      for (let cycle = 1; cycle <= config.totalCycles; cycle += 1) {
+        for (let round = 1; round <= config.totalRounds; round += 1) {
+          globalRound += 1;
+          const exerciseIndex = (globalRound - 1) % exercises.length;
           segments.push({
             type: 'work',
             duration: config.workDuration,
             round,
             cycle,
-            exerciseIndex: (cycle - 1) % exercises.length
+            globalRound,
+            exerciseIndex
           });
-          if (cycle < config.totalCycles) {
+
+          const hasNextRoundInCycle = round < config.totalRounds;
+          if (hasNextRoundInCycle && config.restBetweenRounds > 0) {
+            const nextExerciseIndex = globalRound % exercises.length;
             segments.push({
-              type: 'restCycle',
-              duration: config.restBetweenCycles,
+              type: 'restRound',
+              duration: config.restBetweenRounds,
               round,
               cycle,
-              exerciseIndex: (cycle - 1) % exercises.length
+              globalRound,
+              exerciseIndex: nextExerciseIndex
             });
           }
         }
-        if (round < config.totalRounds) {
+
+        const hasNextCycle = cycle < config.totalCycles && config.restBetweenCycles > 0;
+        if (hasNextCycle) {
+          const nextExerciseIndex = globalRound % exercises.length;
           segments.push({
-            type: 'restRound',
-            duration: config.restBetweenRounds,
-            round,
-            cycle: config.totalCycles,
-            exerciseIndex: (config.totalCycles - 1) % exercises.length
+            type: 'restCycle',
+            duration: config.restBetweenCycles,
+            round: config.totalRounds,
+            cycle,
+            globalRound,
+            exerciseIndex: nextExerciseIndex
           });
         }
       }
+
       state.schedule = segments;
       state.totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
     }
@@ -813,86 +1185,138 @@
     function updateUI() {
       const segment = state.schedule[state.currentSegmentIndex];
       const nextSegment = state.schedule[state.currentSegmentIndex + 1];
-      const totalProgress = state.totalDuration === 0 ? 0 : (state.totalDuration - state.totalRemaining) / state.totalDuration;
-      updateProgressRing(elements.totalProgress, totalProgress);
-      elements.totalTimeDisplay.textContent = formatTime(state.totalRemaining);
-      const displayRound = segment?.round ?? config.totalRounds;
-      const displayCycle = segment?.cycle ?? config.totalCycles;
-      elements.roundTracker.textContent = `${displayRound} / ${config.totalRounds}`;
-      elements.cycleTracker.textContent = `${Math.min(displayCycle, config.totalCycles)} / ${config.totalCycles}`;
-      updateProgressRing(elements.roundProgress, config.totalRounds ? displayRound / config.totalRounds : 0);
-      updateProgressRing(elements.cycleProgress, config.totalCycles ? Math.min(displayCycle, config.totalCycles) / config.totalCycles : 0);
+      const totalRounds = Math.max(1, config.totalRounds);
+      const totalCycles = Math.max(1, config.totalCycles);
+
+      const resolvedRound = segment
+        ? (segment.round && segment.round > 0 ? Math.min(segment.round, totalRounds) : 1)
+        : totalRounds;
+      const resolvedCycle = segment
+        ? (segment.cycle && segment.cycle > 0 ? Math.min(segment.cycle, totalCycles) : 1)
+        : totalCycles;
+
+      updateProgressRing(elements.roundProgress, totalRounds ? resolvedRound / totalRounds : 0);
+      updateProgressRing(elements.cycleProgress, totalCycles ? resolvedCycle / totalCycles : 0);
+
+      elements.roundTracker.textContent = `${resolvedRound} / ${totalRounds}`;
+      elements.cycleTracker.textContent = `${resolvedCycle} / ${totalCycles}`;
+
+      const totalRemaining = state.totalRemaining;
+      elements.segmentCountdown.textContent = formatTime(totalRemaining);
+      elements.summaryLabel.textContent = `Round ${resolvedRound} · Cycle ${resolvedCycle} · ${formatTime(totalRemaining)} left`;
 
       if (!segment) {
-        elements.phaseIndicator.textContent = 'Complete';
+        elements.timerRing.dataset.phase = 'complete';
+        elements.timerLabel.textContent = 'Complete';
+        elements.phaseIndicator.textContent = 'Workout complete';
+        elements.phaseTime.textContent = '00:00';
+        setActiveArcProgress(0, 1);
+        clearRoundArcs();
+        highlightExercise(-1);
         elements.currentAction.textContent = 'Finished';
         elements.currentExercise.textContent = 'Workout complete. Great effort!';
-        elements.segmentCountdown.textContent = '00:00';
         elements.nextAction.textContent = '—';
         elements.nextExercise.textContent = 'Session complete';
-        elements.summaryLabel.textContent = `Round ${config.totalRounds} · Cycle ${config.totalCycles}`;
-        highlightExercise(-1);
         return;
       }
 
-      const phaseMap = {
-        work: 'Work',
-        restCycle: 'Rest',
-        restRound: 'Round Rest'
-      };
+      const phaseMeta = {
+        prepare: { phase: 'prepare', label: 'Prepare' },
+        work: { phase: 'work', label: 'Work' },
+        restRound: { phase: 'rest', label: 'Rest' },
+        restCycle: { phase: 'cycleRest', label: 'Cycle Rest' }
+      }[segment.type] ?? { phase: 'prepare', label: 'Prepare' };
 
-      const phaseLabel = segment.type;
-      const initialSegmentDuration = state.schedule[0]?.duration ?? 0;
-      const readyState = !state.isRunning && !state.isPaused && state.currentSegmentIndex === 0 && Math.abs(state.segmentRemaining - initialSegmentDuration) < 0.5;
+      const paused = state.isPaused && state.isRunning;
+      elements.timerRing.dataset.phase = paused ? 'paused' : phaseMeta.phase;
+      elements.timerLabel.textContent = paused ? 'Paused' : phaseMeta.label;
 
-      if (readyState) {
-        elements.phaseIndicator.textContent = 'Ready';
-        elements.currentAction.textContent = 'Ready';
-        elements.segmentCountdown.textContent = formatTime(initialSegmentDuration);
-        const exercise = exercises[segment.exerciseIndex];
-        elements.currentExercise.textContent = exercise ? `Start with ${exercise.name}` : 'Start the circuit';
-        highlightExercise(segment.exerciseIndex);
+      const segmentDuration = segment.duration || 0;
+      elements.phaseTime.textContent = formatTime(state.segmentRemaining);
+      setActiveArcProgress(state.segmentRemaining, segmentDuration);
+
+      const isRoundPhase = segment.type === 'work' || segment.type === 'restRound';
+      if (isRoundPhase) {
+        const upcomingRest =
+          segment.type === 'work'
+            ? (segment.round < config.totalRounds ? config.restBetweenRounds : 0)
+            : segment.duration;
+        updateRoundArcs(config.workDuration, upcomingRest);
       } else {
-        elements.phaseIndicator.textContent = phaseMap[phaseLabel] ?? 'Ready';
-        elements.currentAction.textContent = phaseMap[phaseLabel] ?? 'Ready';
-        elements.segmentCountdown.textContent = formatTime(state.segmentRemaining);
-
-        if (segment.type === 'work') {
-          const exercise = exercises[segment.exerciseIndex];
-          elements.currentExercise.textContent = exercise?.name ?? 'Circuit';
-          highlightExercise(segment.exerciseIndex);
-        } else if (segment.type === 'restCycle') {
-          const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((seg) => seg.type === 'work');
-          const exercise = nextWork ? exercises[nextWork.exerciseIndex] : exercises[segment.exerciseIndex];
-          elements.currentExercise.textContent = `Recover before ${exercise?.name ?? 'next set'}`;
-          highlightExercise(segment.exerciseIndex);
-        } else if (segment.type === 'restRound') {
-          elements.currentExercise.textContent = `Transition to round ${Math.min(segment.round + 1, config.totalRounds)}`;
-          highlightExercise(-1);
-        }
+        clearRoundArcs();
       }
 
+      let currentExerciseText = '';
+      let highlightIndex = segment.exerciseIndex ?? -1;
+
+      if (segment.type === 'prepare') {
+        const firstWork = state.schedule.find((entry) => entry.type === 'work');
+        const firstExercise = firstWork ? exercises[firstWork.exerciseIndex] : null;
+        currentExerciseText = firstExercise ? `First up: ${firstExercise.name}` : 'Dial in your form.';
+        highlightIndex = firstWork ? firstWork.exerciseIndex : -1;
+      } else if (segment.type === 'work') {
+        const exercise = exercises[segment.exerciseIndex];
+        currentExerciseText = exercise ? `Go hard: ${exercise.name}` : 'Push through the circuit.';
+      } else if (segment.type === 'restRound') {
+        const nextWork = state.schedule.slice(state.currentSegmentIndex + 1).find((entry) => entry.type === 'work');
+        const nextExercise = nextWork ? exercises[nextWork.exerciseIndex] : exercises[segment.exerciseIndex];
+        currentExerciseText = nextExercise ? `Recover before ${nextExercise.name}` : 'Take a quick breather.';
+        highlightIndex = nextWork ? nextWork.exerciseIndex : segment.exerciseIndex ?? -1;
+      } else if (segment.type === 'restCycle') {
+        const targetCycle = Math.min(segment.cycle + 1, config.totalCycles);
+        currentExerciseText = segment.cycle < config.totalCycles
+          ? `Reset for cycle ${targetCycle}`
+          : 'Cool down and celebrate.';
+        highlightIndex = -1;
+      } else {
+        currentExerciseText = 'Stay focused and breathe.';
+      }
+
+      if (paused) {
+        elements.phaseIndicator.textContent = 'Paused';
+        elements.currentAction.textContent = 'Paused';
+        elements.currentExercise.textContent = currentExerciseText;
+      } else {
+        elements.phaseIndicator.textContent = phaseMeta.label;
+        elements.currentAction.textContent = phaseMeta.label;
+        elements.currentExercise.textContent = currentExerciseText;
+      }
+
+      highlightExercise(highlightIndex);
+
       if (nextSegment) {
-        const nextLabel = phaseMap[nextSegment.type] ?? 'Ready';
+        const nextLabel = {
+          prepare: 'Prepare',
+          work: 'Work',
+          restRound: 'Rest',
+          restCycle: 'Cycle Rest'
+        }[nextSegment.type] ?? 'Prepare';
         elements.nextAction.textContent = nextLabel;
         if (nextSegment.type === 'work') {
           const exercise = exercises[nextSegment.exerciseIndex];
-          elements.nextExercise.textContent = exercise?.name ?? 'Circuit';
-        } else if (nextSegment.type === 'restCycle') {
+          elements.nextExercise.textContent = exercise ? exercise.name : 'Circuit';
+        } else if (nextSegment.type === 'restRound') {
           elements.nextExercise.textContent = 'Recovery window';
+        } else if (nextSegment.type === 'restCycle') {
+          const targetCycle = Math.min(nextSegment.cycle + 1, config.totalCycles);
+          elements.nextExercise.textContent = nextSegment.cycle < config.totalCycles ? `Reset for cycle ${targetCycle}` : 'Cool down';
         } else {
-          elements.nextExercise.textContent = `Reset for round ${Math.min(nextSegment.round + 1, config.totalRounds)}`;
+          elements.nextExercise.textContent = 'Pre-start countdown';
         }
       } else {
         elements.nextAction.textContent = 'Finish';
         elements.nextExercise.textContent = 'Final push to complete.';
       }
 
-      elements.summaryLabel.textContent = `Round ${displayRound} · Cycle ${Math.min(displayCycle, config.totalCycles)}`;
-
       const initialDuration = state.schedule[0]?.duration ?? 0;
-      const atBeginning = state.currentSegmentIndex === 0 && Math.abs(state.segmentRemaining - initialDuration) < 0.5 && !state.isRunning;
-      const atEnd = state.currentSegmentIndex >= state.schedule.length - 1 && !state.isRunning && state.totalRemaining < 0.5;
+      const atBeginning =
+        state.currentSegmentIndex === 0 &&
+        Math.abs(state.segmentRemaining - initialDuration) < 0.5 &&
+        !state.isRunning;
+      const atEnd =
+        state.currentSegmentIndex >= state.schedule.length - 1 &&
+        !state.isRunning &&
+        state.totalRemaining < 0.5;
 
       controls.start.disabled = state.isRunning && !state.isPaused;
       controls.pause.disabled = !state.isRunning;
@@ -900,7 +1324,10 @@
       controls.stop.disabled = atBeginning && !state.isRunning;
       controls.reset.disabled = atBeginning && !state.isRunning;
       controls.prev.disabled = state.schedule.length === 0 || findNextWork(state.currentSegmentIndex, -1) === state.currentSegmentIndex;
-      controls.next.disabled = state.schedule.length === 0 || findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex || atEnd;
+      controls.next.disabled =
+        state.schedule.length === 0 ||
+        findNextWork(state.currentSegmentIndex, 1) === state.currentSegmentIndex ||
+        atEnd;
     }
 
     function advance(delta) {
@@ -1036,15 +1463,17 @@
     });
 
     applyDefaultsBtn.addEventListener('click', () => {
-      form.rounds.value = 3;
-      form.cycles.value = 6;
+      form.prepareDuration.value = 10;
+      form.rounds.value = 6;
+      form.cycles.value = 4;
       form.workDuration.value = 60;
       form.restRounds.value = 10;
-      form.restCycles.value = 110;
+      form.restCycles.value = 60;
       updateConfigFromForm();
     });
 
     function updateConfigFromForm() {
+      config.prepareDuration = Math.max(0, Number(form.prepareDuration.value) || 0);
       config.totalRounds = Math.max(1, Number(form.rounds.value) || 1);
       config.totalCycles = Math.max(1, Number(form.cycles.value) || 1);
       config.workDuration = Math.max(5, Number(form.workDuration.value) || 5);
