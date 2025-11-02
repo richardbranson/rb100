@@ -1,0 +1,218 @@
+{
+  "audioLibrary": {
+    "defaultMusic": "focus-30",
+    "music": [
+      {
+        "slug": "focus-30",
+        "label": "Focus Flow - 30 Minutes",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=yScbNQYrR_A",
+        "duration": 1800
+      },
+      {
+        "slug": "endurance-70",
+        "label": "Endurance Builder - 70 Minutes",
+        "type": "youtube",
+        "url": "https://www.youtube.com/watch?v=neAGV0RMFV8",
+        "duration": 4200
+      }
+    ],
+    "prompts": {
+      "countdown": "audio/RB_countdown.mp3",
+      "pause": "audio/RB_pause.mp3",
+      "start": "audio/RB_start.mp3",
+      "tenSecondsLeft": "audio/RB_tenSecondsLeft.mp3",
+      "beeps": "audio/RB_beeps.mp3",
+      "rest": "audio/RB_rest.mp3",
+      "finished": "audio/RB_finished.mp3"
+    }
+  },
+  "workouts": [
+    {
+      "slug": "rb100",
+      "title": "RB100 Workout",
+      "tagline": "30 Minute Circuit",
+      "exercisesHeading": "6 Exercise Circuit",
+      "summary": "Signature kettlebell conditioning set.",
+      "settings": {
+        "prepareDuration": 10,
+        "totalRounds": 6,
+        "totalCycles": 4,
+        "workDuration": 60,
+        "restBetweenRounds": 10,
+        "restBetweenCycles": 60
+      },
+      "exercises": [
+        {
+          "name": "Kettlebell Swing",
+          "description": "Explosive hip hinge to power the bell overhead and ignite the posterior chain.",
+          "video": "media/burpee_standard_v1.mp4"
+        },
+        {
+          "name": "Push-Up to T Rotation",
+          "description": "Alternate a side plank reach between each rep to build rotational stability.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=dSDoVEV2298",
+            "title": "Push-Up to T Rotation demo"
+          }
+        },
+        {
+          "name": "Reverse Lunge & Press",
+          "description": "Step back, drop the knee, and drive overhead with the opposite arm on return.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=ZPoMxOrIeO4"
+          }
+        },
+        {
+          "name": "Renegade Row",
+          "description": "Brace through the core, row the bell, and resist trunk rotation under load.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=LccyTxiUrhg"
+          }
+        },
+        {
+          "name": "V-Up Reach",
+          "description": "Snap to a V-sit while touching toes and controlling the eccentric descent.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=7UVgs18Y1P4"
+          }
+        },
+        {
+          "name": "Squat Thruster",
+          "description": "Sink deep into a squat and explode into a powerful overhead drive.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=L219ltL15zk"
+          }
+        }
+      ],
+      "audio": {
+        "music": "focus-30"
+      }
+    },
+    {
+      "slug": "ignite-intervals",
+      "title": "Ignite Intervals",
+      "tagline": "20 Minute Power Session",
+      "exercisesHeading": "4 Power Moves",
+      "summary": "Short, sharp metabolic finisher.",
+      "settings": {
+        "prepareDuration": 20,
+        "totalRounds": 4,
+        "totalCycles": 3,
+        "workDuration": 45,
+        "restBetweenRounds": 15,
+        "restBetweenCycles": 75
+      },
+      "exercises": [
+        {
+          "name": "Dumbbell Snatch",
+          "description": "Drive through the hips and punch overhead for total-body power.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=0P7nlJLG4rg"
+          }
+        },
+        {
+          "name": "Box Jump Rebound",
+          "description": "Explode onto the box, stick the landing, and rebound with athletic control.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=2fZCk_zYbzA"
+          }
+        },
+        {
+          "name": "Battle Rope Slams",
+          "description": "Alternate heavy slams to spike the heart rate and challenge core stability.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=4FJ3eYJsaGI"
+          }
+        },
+        {
+          "name": "Assault Bike Sprint",
+          "description": "Crank max effort through the pedals and handles for a brutal finisher.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=1jdr8mP7LPM"
+          }
+        }
+      ],
+      "audio": {
+        "music": "focus-30"
+      }
+    },
+    {
+      "slug": "mobility-reset",
+      "title": "Mobility Reset",
+      "tagline": "Low Impact Flow",
+      "exercisesHeading": "6 Mobility Drills",
+      "summary": "Restore and lengthen with controlled tempo.",
+      "settings": {
+        "prepareDuration": 15,
+        "totalRounds": 6,
+        "totalCycles": 2,
+        "workDuration": 45,
+        "restBetweenRounds": 15,
+        "restBetweenCycles": 90
+      },
+      "exercises": [
+        {
+          "name": "World's Greatest Stretch",
+          "description": "Flow between lunge, thoracic reach, and hamstring sweep to open the chain.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=pO3KPQ5fzJ0"
+          }
+        },
+        {
+          "name": "Thread the Needle",
+          "description": "Mobilise the thoracic spine while keeping hips stacked and breathing steady.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=rlac1t_QQJM"
+          }
+        },
+        {
+          "name": "Cossack Squat",
+          "description": "Sink into lateral depth to unlock hips and ankles with control.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=dhDjKmTX8tU"
+          }
+        },
+        {
+          "name": "Dead Bug Reach",
+          "description": "Brace the core while moving opposing limbs through controlled range.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=jbWmbhElf3Q"
+          }
+        },
+        {
+          "name": "Prone Snow Angels",
+          "description": "Sweep the arms overhead while squeezing the upper back and glutes.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=vSou6Vup5W8"
+          }
+        },
+        {
+          "name": "90/90 Switch",
+          "description": "Rotate through internal and external hip rotation without leaning back.",
+          "video": {
+            "type": "youtube",
+            "url": "https://www.youtube.com/watch?v=BiSCSMqx-rE"
+          }
+        }
+      ],
+      "audio": {
+        "music": "endurance-70"
+      }
+    }
+  ]
+}
